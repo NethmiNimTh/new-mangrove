@@ -1,4 +1,4 @@
-//import libraries
+//import librariess
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, SafeAreaView, Platform, Image, Modal, Alert } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
