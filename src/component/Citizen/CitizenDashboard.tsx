@@ -1,12 +1,73 @@
 //import libraries
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ImageBackground, SafeAreaView, Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // component
 const CitizenDashboard = () => {
     const navigation = useNavigation();
+    const [currentLanguage, setCurrentLanguage] = useState('en');
+
+    // Translation object
+    const translations = {
+        en: {
+            title1: 'Please Upload Your',
+            title2: 'Observations',
+            plants: 'Plants',
+            nature: 'Nature',
+            animals: 'Animals',
+            humanActivity: 'Human Activity',
+            home: 'Home',
+            feed: 'Feed',
+            explore: 'Explore',
+            highlights: 'Highlights'
+        },
+        si: {
+            title1: 'කරුණාකර ඔබේ',
+            title2: 'නිරීක්ෂණ උඩුගත කරන්න',
+            plants: 'ශාක',
+            nature: 'ස්වභාවධර්මය',
+            animals: 'සතුන්',
+            humanActivity: 'මානව ක්‍රියාකාරකම්',
+            home: 'මුල් පිටුව',
+            feed: 'පෝෂණය',
+            explore: 'ගවේෂණය',
+            highlights: 'විශේෂාංග'
+        },
+        ta: {
+            title1: 'தயவுசெய்து உங்கள்',
+            title2: 'கண்காணிப்புகளைப் பதிவேற்றவும்',
+            plants: 'தாவரங்கள்',
+            nature: 'இயற்கை',
+            animals: 'விலங்குகள்',
+            humanActivity: 'மனித செயல்பாடு',
+            home: 'முகப்பு',
+            feed: 'ஊட்டம்',
+            explore: 'ஆராயுங்கள்',
+            highlights: 'சிறப்பம்சங்கள்'
+        }
+    };
+
+    // Load saved language preference
+    useEffect(() => {
+        loadLanguage();
+    }, []);
+
+    const loadLanguage = async () => {
+        try {
+            const savedLanguage = await AsyncStorage.getItem('userLanguage');
+            if (savedLanguage) {
+                setCurrentLanguage(savedLanguage);
+            }
+        } catch (error) {
+            console.error('Error loading language:', error);
+        }
+    };
+
+    // Get current translations
+    const t = translations[currentLanguage] || translations.en;
 
     const handleBackPress = () => {
         navigation.goBack();
@@ -36,8 +97,8 @@ const CitizenDashboard = () => {
 
                 {/* Title */}
                 <View style={styles.titleContainer}>
-                    <Text style={styles.title}>Please Upload Your</Text>
-                    <Text style={styles.title}>Observations</Text>
+                    <Text style={styles.title}>{t.title1}</Text>
+                    <Text style={styles.title}>{t.title2}</Text>
                 </View>
 
                 {/* Category Grid */}
@@ -54,7 +115,7 @@ const CitizenDashboard = () => {
                             imageStyle={styles.cardImageStyle}
                         >
                             <View style={styles.cardOverlay}>
-                                <Text style={styles.cardText}>Plants</Text>
+                                <Text style={styles.cardText}>{t.plants}</Text>
                             </View>
                         </ImageBackground>
                     </TouchableOpacity>
@@ -71,7 +132,7 @@ const CitizenDashboard = () => {
                             imageStyle={styles.cardImageStyle}
                         >
                             <View style={styles.cardOverlay}>
-                                <Text style={styles.cardText}>Nature</Text>
+                                <Text style={styles.cardText}>{t.nature}</Text>
                             </View>
                         </ImageBackground>
                     </TouchableOpacity>
@@ -88,7 +149,7 @@ const CitizenDashboard = () => {
                             imageStyle={styles.cardImageStyle}
                         >
                             <View style={styles.cardOverlay}>
-                                <Text style={styles.cardText}>Animals</Text>
+                                <Text style={styles.cardText}>{t.animals}</Text>
                             </View>
                         </ImageBackground>
                     </TouchableOpacity>
@@ -105,7 +166,7 @@ const CitizenDashboard = () => {
                             imageStyle={styles.cardImageStyle}
                         >
                             <View style={styles.cardOverlay}>
-                                <Text style={styles.cardText}>Human Activity</Text>
+                                <Text style={styles.cardText}>{t.humanActivity}</Text>
                             </View>
                         </ImageBackground>
                     </TouchableOpacity>
@@ -119,7 +180,7 @@ const CitizenDashboard = () => {
                         activeOpacity={0.7}
                     >
                         <Icon name="home" size={28} color="#666" />
-                        <Text style={styles.navText}>Home</Text>
+                        <Text style={styles.navText}>{t.home}</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity 
@@ -128,7 +189,7 @@ const CitizenDashboard = () => {
                         activeOpacity={0.7}
                     >
                         <Icon name="wb-sunny" size={28} color="#666" />
-                        <Text style={styles.navText}>Feed</Text>
+                        <Text style={styles.navText}>{t.feed}</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity 
@@ -137,7 +198,7 @@ const CitizenDashboard = () => {
                         activeOpacity={0.7}
                     >
                         <Icon name="search" size={28} color="#666" />
-                        <Text style={styles.navText}>Explore</Text>
+                        <Text style={styles.navText}>{t.explore}</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity 
@@ -146,7 +207,7 @@ const CitizenDashboard = () => {
                         activeOpacity={0.7}
                     >
                         <Icon name="account-circle" size={28} color="#666" />
-                        <Text style={styles.navText}>Highlights</Text>
+                        <Text style={styles.navText}>{t.highlights}</Text>
                     </TouchableOpacity>
                 </View>
             </View>

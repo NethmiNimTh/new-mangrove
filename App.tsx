@@ -32,6 +32,7 @@ import PlantDataCollection from './src/component/Citizen/PlantDataCollection';
 import NatureDataCollection from './src/component/Citizen/NatureDataCollection';
 import HumanActivityDataCollection from './src/component/Citizen/HumanActivityDataCollection';    
 import CreditInterface from './src/component/Citizen/CreditInterface';
+import LanguageSelection from './src/component/LanguageSelection/LanguageOption';
 
 
 // Google Client Configuration
@@ -141,6 +142,7 @@ const App = () => {
           <Stack.Screen name="NatureDataCollection" component={NatureDataCollection} />
           <Stack.Screen name="HumanActivityDataCollection" component={HumanActivityDataCollection} />
           <Stack.Screen name="CreditInterface" component={CreditInterface} />
+          <Stack.Screen name="LanguageSelection" component={LanguageSelection} />
         </Stack.Navigator>
       </NavigationContainer>
     </PaperProvider>

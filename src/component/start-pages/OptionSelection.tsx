@@ -21,7 +21,7 @@ const OptionSelection = () => {
     }, []);
 
     const handleCitizenPress = () => {
-        navigation.navigate('CitizenDashboard'); // Navigate to Citizen Dashboard
+        navigation.navigate('LanguageSelection'); // Navigate to Citizen Dashboard
     };
 
     const handleScientistPress = () => {
@@ -75,9 +75,9 @@ const OptionSelection = () => {
             </View>
 
             {/* Title */}
-            <View style={styles.titleContainer}>
+            {/* <View style={styles.titleContainer}>
                 <Text style={styles.title}>Select Your Role</Text>
-            </View>
+            </View> */}
 
             {/* Main Content - Selection Buttons */}
             <View style={styles.container}>
@@ -88,8 +88,10 @@ const OptionSelection = () => {
                     activeOpacity={0.8}
                 >
                     <View style={styles.buttonContent}>
-                        <Icon name="person" size={32} color="#4A7856" style={styles.buttonIcon} />
-                        <Text style={styles.buttonText}>Citizen</Text>
+                        {/* <Icon name="person" size={32} color="#4A7856" style={styles.buttonIcon} /> */}
+                        <Text style={styles.buttonText}>පොදු    ජනතාව
+                                                        பொது  மக்கள்
+                                                        General Public</Text>
                     </View>
                 </TouchableOpacity>
 
@@ -100,7 +102,7 @@ const OptionSelection = () => {
                     activeOpacity={0.8}
                 >
                     <View style={styles.buttonContent}>
-                        <Icon name="science" size={32} color="#4A7856" style={styles.buttonIcon} />
+                        {/* <Icon name="science" size={32} color="#4A7856" style={styles.buttonIcon} /> */}
                         <Text style={styles.buttonText}>Scientist</Text>
                     </View>
                 </TouchableOpacity>

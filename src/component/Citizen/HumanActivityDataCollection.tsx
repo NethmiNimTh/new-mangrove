@@ -1,17 +1,19 @@
 //import libraries
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, SafeAreaView, Platform, Image, Modal, Alert } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { RadioButton } from 'react-native-paper';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // component
 const HumanActivityDataCollection = () => {
     const navigation = useNavigation();
     const route = useRoute();
     const category = route.params?.category || 'Human Activity';
+    const [currentLanguage, setCurrentLanguage] = useState('en');
 
     const [activityType, setActivityType] = useState('');
     const [showActivityPicker, setShowActivityPicker] = useState(false);
@@ -22,12 +24,192 @@ const HumanActivityDataCollection = () => {
     const [timeOfDay, setTimeOfDay] = useState('');
     const [description, setDescription] = useState('');
 
-    const activityCategories = {
-        'Environmental Impacts': ['Fire', 'Deforestation', 'Mining', 'Waste & Pollution', 'Waste disposal', 'Plastic and polythene'],
-        'Construction & Development': ['Constructions'],
-        'Wildlife & Animals': ['Domestic Animal', 'Hunting'],
-        'Other Activities': ['Illegal behaviour', 'Other'],
+    // Translation object
+    const translations = {
+        en: {
+            title: 'Human Activity',
+            activityType: 'Activity Type',
+            selectActivityType: 'Select activity type',
+            photo: 'Photo',
+            date: 'Date',
+            timeOfDay: 'Time of Day',
+            description: 'Description (Optional)',
+            submit: 'Submit',
+            photoPlaceholder: 'Tap to upload or capture a photo',
+            chooseOption: 'Choose an option',
+            camera: 'Camera',
+            gallery: 'Gallery',
+            cancel: 'Cancel',
+            requiredField: 'Required Field',
+            selectActivityAlert: 'Please select an activity type',
+            uploadPhoto: 'Please upload a photo',
+            selectTimeOfDay: 'Please select time of day',
+            descriptionPlaceholder: 'Add any additional notes about your observation...',
+            // Activity categories
+            environmentalImpacts: 'Environmental Impacts',
+            constructionDevelopment: 'Construction & Development',
+            wildlifeAnimals: 'Wildlife & Animals',
+            otherActivities: 'Other Activities',
+            // Environmental Impacts
+            fire: 'Fire',
+            deforestation: 'Deforestation',
+            mining: 'Mining',
+            wastePollution: 'Waste & Pollution',
+            wasteDisposal: 'Waste disposal',
+            plasticPolythene: 'Plastic and polythene',
+            // Construction & Development
+            constructions: 'Constructions',
+            // Wildlife & Animals
+            domesticAnimal: 'Domestic Animal',
+            hunting: 'Hunting',
+            // Other Activities
+            illegalBehaviour: 'Illegal behaviour',
+            other: 'Other',
+            // Time options
+            morning: 'Morning',
+            noon: 'Noon',
+            evening: 'Evening',
+            night: 'Night'
+        },
+        si: {
+            title: 'මානව ක්‍රියාකාරකම්',
+            activityType: 'ක්‍රියාකාරකම් වර්ගය',
+            selectActivityType: 'ක්‍රියාකාරකම් වර්ගය තෝරන්න',
+            photo: 'ඡායාරූපය',
+            date: 'දිනය',
+            timeOfDay: 'දවසේ වේලාව',
+            description: 'විස්තරය (අත්‍යවශ්‍ය නොවේ)',
+            submit: 'ඉදිරිපත් කරන්න',
+            photoPlaceholder: 'ඡායාරූපයක් උඩුගත කිරීමට හෝ ග්‍රහණය කිරීමට තට්ටු කරන්න',
+            chooseOption: 'විකල්පයක් තෝරන්න',
+            camera: 'කැමරාව',
+            gallery: 'ගැලරිය',
+            cancel: 'අවලංගු කරන්න',
+            requiredField: 'අවශ්‍ය ක්ෂේත්‍රය',
+            selectActivityAlert: 'කරුණාකර ක්‍රියාකාරකම් වර්ගයක් තෝරන්න',
+            uploadPhoto: 'කරුණාකර ඡායාරූපයක් උඩුගත කරන්න',
+            selectTimeOfDay: 'කරුණාකර දවසේ වේලාව තෝරන්න',
+            descriptionPlaceholder: 'ඔබේ නිරීක්ෂණය ගැන අමතර සටහන් එක් කරන්න...',
+            // Activity categories
+            environmentalImpacts: 'පාරිසරික බලපෑම්',
+            constructionDevelopment: 'ඉදිකිරීම් සහ සංවර්ධනය',
+            wildlifeAnimals: 'වන ජීවී සහ සතුන්',
+            otherActivities: 'වෙනත් ක්‍රියාකාරකම්',
+            // Environmental Impacts
+            fire: 'ගින්න',
+            deforestation: 'වන විනාශය',
+            mining: 'පතල් කැණීම',
+            wastePollution: 'අපද්‍රව්‍ය සහ දූෂණය',
+            wasteDisposal: 'අපද්‍රව්‍ය බැහැර කිරීම',
+            plasticPolythene: 'ප්ලාස්ටික් සහ පොලිතීන්',
+            // Construction & Development
+            constructions: 'ඉදිකිරීම්',
+            // Wildlife & Animals
+            domesticAnimal: 'ගෘහ සතුන්',
+            hunting: 'දඩයම්',
+            // Other Activities
+            illegalBehaviour: 'නීති විරෝධී හැසිරීම',
+            other: 'වෙනත්',
+            // Time options
+            morning: 'උදෑසන',
+            noon: 'මධ්‍යාහ්නය',
+            evening: 'සවස',
+            night: 'රාත්‍රිය'
+        },
+        ta: {
+            title: 'மனித செயல்பாடு',
+            activityType: 'செயல்பாடு வகை',
+            selectActivityType: 'செயல்பாடு வகையைத் தேர்ந்தெடுக்கவும்',
+            photo: 'புகைப்படம்',
+            date: 'தேதி',
+            timeOfDay: 'நாளின் நேரம்',
+            description: 'விளக்கம் (விருப்பமானது)',
+            submit: 'சமர்ப்பிக்கவும்',
+            photoPlaceholder: 'புகைப்படத்தைப் பதிவேற்ற அல்லது எடுக்க தட்டவும்',
+            chooseOption: 'ஒரு விருப்பத்தைத் தேர்ந்தெடுக்கவும்',
+            camera: 'கேமரா',
+            gallery: 'கேலரி',
+            cancel: 'ரத்துசெய்',
+            requiredField: 'தேவையான புலம்',
+            selectActivityAlert: 'தயவுசெய்து ஒரு செயல்பாடு வகையைத் தேர்ந்தெடுக்கவும்',
+            uploadPhoto: 'தயவுசெய்து ஒரு புகைப்படத்தைப் பதிவேற்றவும்',
+            selectTimeOfDay: 'தயவுசெய்து நாளின் நேரத்தைத் தேர்ந்தெடுக்கவும்',
+            descriptionPlaceholder: 'உங்கள் கவனிப்பு பற்றிய கூடுதல் குறிப்புகளைச் சேர்க்கவும்...',
+            // Activity categories
+            environmentalImpacts: 'சுற்றுச்சூழல் தாக்கங்கள்',
+            constructionDevelopment: 'கட்டுமானம் & மேம்பாடு',
+            wildlifeAnimals: 'வனவிலங்குகள் & விலங்குகள்',
+            otherActivities: 'பிற செயல்பாடுகள்',
+            // Environmental Impacts
+            fire: 'தீ',
+            deforestation: 'காடழிப்பு',
+            mining: 'சுரங்கம்',
+            wastePollution: 'கழிவு & மாசுபாடு',
+            wasteDisposal: 'கழிவு அகற்றல்',
+            plasticPolythene: 'பிளாஸ்டிக் மற்றும் பாலித்தீன்',
+            // Construction & Development
+            constructions: 'கட்டுமானங்கள்',
+            // Wildlife & Animals
+            domesticAnimal: 'வீட்டு விலங்கு',
+            hunting: 'வேட்டையாடுதல்',
+            // Other Activities
+            illegalBehaviour: 'சட்டவிரோத நடத்தை',
+            other: 'மற்றவை',
+            // Time options
+            morning: 'காலை',
+            noon: 'மதியம்',
+            evening: 'மாலை',
+            night: 'இரவு'
+        }
     };
+
+    // Load saved language preference
+    useEffect(() => {
+        loadLanguage();
+    }, []);
+
+    const loadLanguage = async () => {
+        try {
+            const savedLanguage = await AsyncStorage.getItem('userLanguage');
+            if (savedLanguage) {
+                setCurrentLanguage(savedLanguage);
+            }
+        } catch (error) {
+            console.error('Error loading language:', error);
+        }
+    };
+
+    // Get current translations
+    const t = translations[currentLanguage] || translations.en;
+
+    const activityCategories = {
+        [t.environmentalImpacts]: [
+            { value: 'Fire', label: t.fire },
+            { value: 'Deforestation', label: t.deforestation },
+            { value: 'Mining', label: t.mining },
+            { value: 'Waste & Pollution', label: t.wastePollution },
+            { value: 'Waste disposal', label: t.wasteDisposal },
+            { value: 'Plastic and polythene', label: t.plasticPolythene }
+        ],
+        [t.constructionDevelopment]: [
+            { value: 'Constructions', label: t.constructions }
+        ],
+        [t.wildlifeAnimals]: [
+            { value: 'Domestic Animal', label: t.domesticAnimal },
+            { value: 'Hunting', label: t.hunting }
+        ],
+        [t.otherActivities]: [
+            { value: 'Illegal behaviour', label: t.illegalBehaviour },
+            { value: 'Other', label: t.other }
+        ]
+    };
+
+    const timeOptions = [
+        { value: 'Morning', label: t.morning },
+        { value: 'Noon', label: t.noon },
+        { value: 'Evening', label: t.evening },
+        { value: 'Night', label: t.night }
+    ];
 
     const handleBackPress = () => {
         navigation.goBack();
@@ -87,6 +269,21 @@ const HumanActivityDataCollection = () => {
     };
 
     const handleSubmit = () => {
+        if (!activityType) {
+            Alert.alert(t.requiredField, t.selectActivityAlert);
+            return;
+        }
+
+        if (!photo) {
+            Alert.alert(t.requiredField, t.uploadPhoto);
+            return;
+        }
+
+        if (!timeOfDay) {
+            Alert.alert(t.requiredField, t.selectTimeOfDay);
+            return;
+        }
+
         const observationData = {
             category,
             activityType,
@@ -96,11 +293,20 @@ const HumanActivityDataCollection = () => {
             description
         };
         console.log('Submit observation:', observationData);
-        navigation.goBack();
+        navigation.navigate('CreditInterface', { observationData });
     };
 
     const formatDate = (date) => {
         return date.toISOString().split('T')[0];
+    };
+
+    // Get display label for current activity type
+    const getCurrentActivityLabel = () => {
+        for (const activities of Object.values(activityCategories)) {
+            const found = activities.find(a => a.value === activityType);
+            if (found) return found.label;
+        }
+        return t.selectActivityType;
     };
 
     return (
@@ -119,20 +325,20 @@ const HumanActivityDataCollection = () => {
 
                 {/* Title */}
                 <View style={styles.titleContainer}>
-                    <Text style={styles.title}>Human Activity</Text>
+                    <Text style={styles.title}>{t.title}</Text>
                 </View>
 
                 {/* Form Content */}
                 <View style={styles.formContainer}>
                     {/* Activity Type Dropdown */}
                     <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Activity Type <Text style={styles.required}>*</Text></Text>
+                        <Text style={styles.label}>{t.activityType} <Text style={styles.required}>*</Text></Text>
                         <TouchableOpacity 
                             style={styles.dropdown}
                             onPress={() => setShowActivityPicker(true)}
                         >
                             <Text style={[styles.dropdownText, !activityType && styles.placeholder]}>
-                                {activityType || 'Select activity type'}
+                                {getCurrentActivityLabel()}
                             </Text>
                             <Icon name="arrow-drop-down" size={24} color="#666" />
                         </TouchableOpacity>
@@ -140,7 +346,7 @@ const HumanActivityDataCollection = () => {
 
                     {/* Photo Upload */}
                     <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Photo <Text style={styles.required}>*</Text></Text>
+                        <Text style={styles.label}>{t.photo} <Text style={styles.required}>*</Text></Text>
                         <TouchableOpacity 
                             style={styles.photoUploadArea}
                             onPress={handlePhotoUpload}
@@ -161,7 +367,7 @@ const HumanActivityDataCollection = () => {
                                 <View style={styles.photoPlaceholder}>
                                     <Icon name="photo-camera" size={50} color="#CCC" />
                                     <Text style={styles.photoPlaceholderText}>
-                                        Tap to upload or capture a photo
+                                        {t.photoPlaceholder}
                                     </Text>
                                 </View>
                             )}
@@ -170,7 +376,7 @@ const HumanActivityDataCollection = () => {
 
                     {/* Date Picker */}
                     <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Date <Text style={styles.required}>*</Text></Text>
+                        <Text style={styles.label}>{t.date} <Text style={styles.required}>*</Text></Text>
                         <TouchableOpacity 
                             style={styles.dateInput}
                             onPress={() => setShowDatePicker(true)}
@@ -190,7 +396,7 @@ const HumanActivityDataCollection = () => {
 
                     {/* Time of Day */}
                     <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Time of Day <Text style={styles.required}>*</Text></Text>
+                        <Text style={styles.label}>{t.timeOfDay} <Text style={styles.required}>*</Text></Text>
                         <View style={styles.radioContainer}>
                             <View style={styles.radioRow}>
                                 <TouchableOpacity 
@@ -203,7 +409,7 @@ const HumanActivityDataCollection = () => {
                                         onPress={() => setTimeOfDay('Morning')}
                                         color="#4A7856"
                                     />
-                                    <Text style={styles.radioLabel}>Morning</Text>
+                                    <Text style={styles.radioLabel}>{t.morning}</Text>
                                 </TouchableOpacity>
 
                                 <TouchableOpacity 
@@ -216,7 +422,7 @@ const HumanActivityDataCollection = () => {
                                         onPress={() => setTimeOfDay('Noon')}
                                         color="#4A7856"
                                     />
-                                    <Text style={styles.radioLabel}>Noon</Text>
+                                    <Text style={styles.radioLabel}>{t.noon}</Text>
                                 </TouchableOpacity>
                             </View>
 
@@ -231,7 +437,7 @@ const HumanActivityDataCollection = () => {
                                         onPress={() => setTimeOfDay('Evening')}
                                         color="#4A7856"
                                     />
-                                    <Text style={styles.radioLabel}>Evening</Text>
+                                    <Text style={styles.radioLabel}>{t.evening}</Text>
                                 </TouchableOpacity>
 
                                 <TouchableOpacity 
@@ -244,7 +450,7 @@ const HumanActivityDataCollection = () => {
                                         onPress={() => setTimeOfDay('Night')}
                                         color="#4A7856"
                                     />
-                                    <Text style={styles.radioLabel}>Night</Text>
+                                    <Text style={styles.radioLabel}>{t.night}</Text>
                                 </TouchableOpacity>
                             </View>
                         </View>
@@ -252,10 +458,10 @@ const HumanActivityDataCollection = () => {
 
                     {/* Description */}
                     <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Description (Optional)</Text>
+                        <Text style={styles.label}>{t.description}</Text>
                         <TextInput
                             style={styles.textArea}
-                            placeholder="Add any additional notes about your observation..."
+                            placeholder={t.descriptionPlaceholder}
                             placeholderTextColor="#AAA"
                             multiline
                             numberOfLines={4}
@@ -271,7 +477,7 @@ const HumanActivityDataCollection = () => {
                         onPress={handleSubmit}
                         activeOpacity={0.8}
                     >
-                        <Text style={styles.submitButtonText}>Submit</Text>
+                        <Text style={styles.submitButtonText}>{t.submit}</Text>
                     </TouchableOpacity>
                 </View>
             </ScrollView>
@@ -286,7 +492,7 @@ const HumanActivityDataCollection = () => {
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContainer}>
                         <View style={styles.modalHeader}>
-                            <Text style={styles.modalTitle}>Select activity type</Text>
+                            <Text style={styles.modalTitle}>{t.selectActivityType}</Text>
                             <TouchableOpacity 
                                 onPress={() => setShowActivityPicker(false)}
                                 style={styles.modalCloseButton}
@@ -302,18 +508,18 @@ const HumanActivityDataCollection = () => {
                                     <View style={styles.activityGrid}>
                                         {activities.map((activity) => (
                                             <TouchableOpacity
-                                                key={activity}
+                                                key={activity.value}
                                                 style={[
                                                     styles.activityOption,
-                                                    activityType === activity && styles.activityOptionSelected
+                                                    activityType === activity.value && styles.activityOptionSelected
                                                 ]}
-                                                onPress={() => handleActivitySelect(activity)}
+                                                onPress={() => handleActivitySelect(activity.value)}
                                             >
                                                 <Text style={[
                                                     styles.activityOptionText,
-                                                    activityType === activity && styles.activityOptionTextSelected
+                                                    activityType === activity.value && styles.activityOptionTextSelected
                                                 ]}>
-                                                    {activity}
+                                                    {activity.label}
                                                 </Text>
                                             </TouchableOpacity>
                                         ))}
@@ -334,7 +540,7 @@ const HumanActivityDataCollection = () => {
             >
                 <View style={styles.imagePickerOverlay}>
                     <View style={styles.imagePickerContainer}>
-                        <Text style={styles.imagePickerTitle}>Choose an option</Text>
+                        <Text style={styles.imagePickerTitle}>{t.chooseOption}</Text>
                         
                         <View style={styles.imagePickerOptions}>
                             <TouchableOpacity 
@@ -343,7 +549,7 @@ const HumanActivityDataCollection = () => {
                                 activeOpacity={0.7}
                             >
                                 <Icon name="photo-camera" size={50} color="#4A7856" />
-                                <Text style={styles.imagePickerOptionText}>Camera</Text>
+                                <Text style={styles.imagePickerOptionText}>{t.camera}</Text>
                             </TouchableOpacity>
 
                             <TouchableOpacity 
@@ -352,7 +558,7 @@ const HumanActivityDataCollection = () => {
                                 activeOpacity={0.7}
                             >
                                 <Icon name="photo-library" size={50} color="#4A7856" />
-                                <Text style={styles.imagePickerOptionText}>Gallery</Text>
+                                <Text style={styles.imagePickerOptionText}>{t.gallery}</Text>
                             </TouchableOpacity>
                         </View>
 
@@ -360,7 +566,7 @@ const HumanActivityDataCollection = () => {
                             style={styles.imagePickerCancelButton}
                             onPress={() => setShowImagePicker(false)}
                         >
-                            <Text style={styles.imagePickerCancelText}>Cancel</Text>
+                            <Text style={styles.imagePickerCancelText}>{t.cancel}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>

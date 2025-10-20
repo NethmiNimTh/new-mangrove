@@ -1,17 +1,19 @@
 //import libraries
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, SafeAreaView, Platform, Image, Modal, Alert } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { RadioButton } from 'react-native-paper';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // component
 const NatureDataCollection = () => {
     const navigation = useNavigation();
     const route = useRoute();
     const category = route.params?.category || 'Nature';
+    const [currentLanguage, setCurrentLanguage] = useState('en');
 
     const [natureType, setNatureType] = useState('');
     const [showNaturePicker, setShowNaturePicker] = useState(false);
@@ -22,10 +24,127 @@ const NatureDataCollection = () => {
     const [timeOfDay, setTimeOfDay] = useState('');
     const [description, setDescription] = useState('');
 
+    // Translation object
+    const translations = {
+        en: {
+            title: 'Nature',
+            category: 'Category',
+            selectCategory: 'Select category',
+            photo: 'Photo',
+            date: 'Date',
+            timeOfDay: 'Time of Day',
+            description: 'Description (Optional)',
+            submit: 'Submit',
+            photoPlaceholder: 'Tap to upload or capture a photo',
+            chooseOption: 'Choose an option',
+            camera: 'Camera',
+            gallery: 'Gallery',
+            cancel: 'Cancel',
+            requiredField: 'Required Field',
+            selectCategoryAlert: 'Please select a category',
+            uploadPhoto: 'Please upload a photo',
+            selectTimeOfDay: 'Please select time of day',
+            descriptionPlaceholder: 'Add any additional notes about your observation...',
+            // Nature types
+            naturalEvents: 'Natural events',
+            aesthetics: 'Aesthetics',
+            other: 'Other',
+            // Time options
+            morning: 'Morning',
+            noon: 'Noon',
+            evening: 'Evening',
+            night: 'Night'
+        },
+        si: {
+            title: 'ස්වභාවධර්මය',
+            category: 'කාණ්ඩය',
+            selectCategory: 'කාණ්ඩය තෝරන්න',
+            photo: 'ඡායාරූපය',
+            date: 'දිනය',
+            timeOfDay: 'දවසේ වේලාව',
+            description: 'විස්තරය (අත්‍යවශ්‍ය නොවේ)',
+            submit: 'ඉදිරිපත් කරන්න',
+            photoPlaceholder: 'ඡායාරූපයක් උඩුගත කිරීමට හෝ ග්‍රහණය කිරීමට තට්ටු කරන්න',
+            chooseOption: 'විකල්පයක් තෝරන්න',
+            camera: 'කැමරාව',
+            gallery: 'ගැලරිය',
+            cancel: 'අවලංගු කරන්න',
+            requiredField: 'අවශ්‍ය ක්ෂේත්‍රය',
+            selectCategoryAlert: 'කරුණාකර කාණ්ඩයක් තෝරන්න',
+            uploadPhoto: 'කරුණාකර ඡායාරූපයක් උඩුගත කරන්න',
+            selectTimeOfDay: 'කරුණාකර දවසේ වේලාව තෝරන්න',
+            descriptionPlaceholder: 'ඔබේ නිරීක්ෂණය ගැන අමතර සටහන් එක් කරන්න...',
+            // Nature types
+            naturalEvents: 'ස්වාභාවික සිදුවීම්',
+            aesthetics: 'සෞන්දර්යය',
+            other: 'වෙනත්',
+            // Time options
+            morning: 'උදෑසන',
+            noon: 'මධ්‍යාහ්නය',
+            evening: 'සවස',
+            night: 'රාත්‍රිය'
+        },
+        ta: {
+            title: 'இயற்கை',
+            category: 'வகை',
+            selectCategory: 'வகையைத் தேர்ந்தெடுக்கவும்',
+            photo: 'புகைப்படம்',
+            date: 'தேதி',
+            timeOfDay: 'நாளின் நேரம்',
+            description: 'விளக்கம் (விருப்பமானது)',
+            submit: 'சமர்ப்பிக்கவும்',
+            photoPlaceholder: 'புகைப்படத்தைப் பதிவேற்ற அல்லது எடுக்க தட்டவும்',
+            chooseOption: 'ஒரு விருப்பத்தைத் தேர்ந்தெடுக்கவும்',
+            camera: 'கேமரா',
+            gallery: 'கேலரி',
+            cancel: 'ரத்துசெய்',
+            requiredField: 'தேவையான புலம்',
+            selectCategoryAlert: 'தயவுசெய்து ஒரு வகையைத் தேர்ந்தெடுக்கவும்',
+            uploadPhoto: 'தயவுசெய்து ஒரு புகைப்படத்தைப் பதிவேற்றவும்',
+            selectTimeOfDay: 'தயவுசெய்து நாளின் நேரத்தைத் தேர்ந்தெடுக்கவும்',
+            descriptionPlaceholder: 'உங்கள் கவனிப்பு பற்றிய கூடுதல் குறிப்புகளைச் சேர்க்கவும்...',
+            // Nature types
+            naturalEvents: 'இயற்கை நிகழ்வுகள்',
+            aesthetics: 'அழகியல்',
+            other: 'மற்றவை',
+            // Time options
+            morning: 'காலை',
+            noon: 'மதியம்',
+            evening: 'மாலை',
+            night: 'இரவு'
+        }
+    };
+
+    // Load saved language preference
+    useEffect(() => {
+        loadLanguage();
+    }, []);
+
+    const loadLanguage = async () => {
+        try {
+            const savedLanguage = await AsyncStorage.getItem('userLanguage');
+            if (savedLanguage) {
+                setCurrentLanguage(savedLanguage);
+            }
+        } catch (error) {
+            console.error('Error loading language:', error);
+        }
+    };
+
+    // Get current translations
+    const t = translations[currentLanguage] || translations.en;
+
     const natureTypes = [
-        'Natural events',
-        'Aesthetics',
-        'Other'
+        { value: 'Natural events', label: t.naturalEvents },
+        { value: 'Aesthetics', label: t.aesthetics },
+        { value: 'Other', label: t.other }
+    ];
+
+    const timeOptions = [
+        { value: 'Morning', label: t.morning },
+        { value: 'Noon', label: t.noon },
+        { value: 'Evening', label: t.evening },
+        { value: 'Night', label: t.night }
     ];
 
     const handleBackPress = () => {
@@ -88,17 +207,17 @@ const NatureDataCollection = () => {
     const handleSubmit = () => {
         // Validation
         if (!natureType) {
-            Alert.alert('Required Field', 'Please select a category');
+            Alert.alert(t.requiredField, t.selectCategoryAlert);
             return;
         }
 
         if (!photo) {
-            Alert.alert('Required Field', 'Please upload a photo');
+            Alert.alert(t.requiredField, t.uploadPhoto);
             return;
         }
 
         if (!timeOfDay) {
-            Alert.alert('Required Field', 'Please select time of day');
+            Alert.alert(t.requiredField, t.selectTimeOfDay);
             return;
         }
 
@@ -122,6 +241,12 @@ const NatureDataCollection = () => {
         return date.toISOString().split('T')[0];
     };
 
+    // Get display label for current nature type
+    const getCurrentNatureLabel = () => {
+        const nature = natureTypes.find(n => n.value === natureType);
+        return nature ? nature.label : t.selectCategory;
+    };
+
     return (
         <SafeAreaView style={styles.safeArea}>
             <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -138,20 +263,20 @@ const NatureDataCollection = () => {
 
                 {/* Title */}
                 <View style={styles.titleContainer}>
-                    <Text style={styles.title}>{category}</Text>
+                    <Text style={styles.title}>{t.title}</Text>
                 </View>
 
                 {/* Form Content */}
                 <View style={styles.formContainer}>
                     {/* Category Dropdown */}
                     <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Category <Text style={styles.required}>*</Text></Text>
+                        <Text style={styles.label}>{t.category} <Text style={styles.required}>*</Text></Text>
                         <TouchableOpacity 
                             style={styles.dropdown}
                             onPress={() => setShowNaturePicker(true)}
                         >
                             <Text style={[styles.dropdownText, !natureType && styles.placeholder]}>
-                                {natureType || 'Select category'}
+                                {getCurrentNatureLabel()}
                             </Text>
                             <Icon name="arrow-drop-down" size={24} color="#666" />
                         </TouchableOpacity>
@@ -159,7 +284,7 @@ const NatureDataCollection = () => {
 
                     {/* Photo Upload */}
                     <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Photo <Text style={styles.required}>*</Text></Text>
+                        <Text style={styles.label}>{t.photo} <Text style={styles.required}>*</Text></Text>
                         <TouchableOpacity 
                             style={styles.photoUploadArea}
                             onPress={handlePhotoUpload}
@@ -180,7 +305,7 @@ const NatureDataCollection = () => {
                                 <View style={styles.photoPlaceholder}>
                                     <Icon name="photo-camera" size={50} color="#CCC" />
                                     <Text style={styles.photoPlaceholderText}>
-                                        Tap to upload or capture a photo
+                                        {t.photoPlaceholder}
                                     </Text>
                                 </View>
                             )}
@@ -189,7 +314,7 @@ const NatureDataCollection = () => {
 
                     {/* Date Picker */}
                     <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Date <Text style={styles.required}>*</Text></Text>
+                        <Text style={styles.label}>{t.date} <Text style={styles.required}>*</Text></Text>
                         <TouchableOpacity 
                             style={styles.dateInput}
                             onPress={() => setShowDatePicker(true)}
@@ -209,7 +334,7 @@ const NatureDataCollection = () => {
 
                     {/* Time of Day */}
                     <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Time of Day <Text style={styles.required}>*</Text></Text>
+                        <Text style={styles.label}>{t.timeOfDay} <Text style={styles.required}>*</Text></Text>
                         <View style={styles.radioContainer}>
                             <View style={styles.radioRow}>
                                 <TouchableOpacity 
@@ -222,7 +347,7 @@ const NatureDataCollection = () => {
                                         onPress={() => setTimeOfDay('Morning')}
                                         color="#4A7856"
                                     />
-                                    <Text style={styles.radioLabel}>Morning</Text>
+                                    <Text style={styles.radioLabel}>{t.morning}</Text>
                                 </TouchableOpacity>
 
                                 <TouchableOpacity 
@@ -235,7 +360,7 @@ const NatureDataCollection = () => {
                                         onPress={() => setTimeOfDay('Noon')}
                                         color="#4A7856"
                                     />
-                                    <Text style={styles.radioLabel}>Noon</Text>
+                                    <Text style={styles.radioLabel}>{t.noon}</Text>
                                 </TouchableOpacity>
                             </View>
 
@@ -250,7 +375,7 @@ const NatureDataCollection = () => {
                                         onPress={() => setTimeOfDay('Evening')}
                                         color="#4A7856"
                                     />
-                                    <Text style={styles.radioLabel}>Evening</Text>
+                                    <Text style={styles.radioLabel}>{t.evening}</Text>
                                 </TouchableOpacity>
 
                                 <TouchableOpacity 
@@ -263,7 +388,7 @@ const NatureDataCollection = () => {
                                         onPress={() => setTimeOfDay('Night')}
                                         color="#4A7856"
                                     />
-                                    <Text style={styles.radioLabel}>Night</Text>
+                                    <Text style={styles.radioLabel}>{t.night}</Text>
                                 </TouchableOpacity>
                             </View>
                         </View>
@@ -271,10 +396,10 @@ const NatureDataCollection = () => {
 
                     {/* Description */}
                     <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Description (Optional)</Text>
+                        <Text style={styles.label}>{t.description}</Text>
                         <TextInput
                             style={styles.textArea}
-                            placeholder="Add any additional notes about your observation..."
+                            placeholder={t.descriptionPlaceholder}
                             placeholderTextColor="#AAA"
                             multiline
                             numberOfLines={4}
@@ -290,7 +415,7 @@ const NatureDataCollection = () => {
                         onPress={handleSubmit}
                         activeOpacity={0.8}
                     >
-                        <Text style={styles.submitButtonText}>Submit</Text>
+                        <Text style={styles.submitButtonText}>{t.submit}</Text>
                     </TouchableOpacity>
                 </View>
             </ScrollView>
@@ -305,7 +430,7 @@ const NatureDataCollection = () => {
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContainer}>
                         <View style={styles.modalHeader}>
-                            <Text style={styles.modalTitle}>Select category</Text>
+                            <Text style={styles.modalTitle}>{t.selectCategory}</Text>
                             <TouchableOpacity 
                                 onPress={() => setShowNaturePicker(false)}
                                 style={styles.modalCloseButton}
@@ -318,18 +443,18 @@ const NatureDataCollection = () => {
                             <View style={styles.natureGrid}>
                                 {natureTypes.map((nature) => (
                                     <TouchableOpacity
-                                        key={nature}
+                                        key={nature.value}
                                         style={[
                                             styles.natureOption,
-                                            natureType === nature && styles.natureOptionSelected
+                                            natureType === nature.value && styles.natureOptionSelected
                                         ]}
-                                        onPress={() => handleNatureSelect(nature)}
+                                        onPress={() => handleNatureSelect(nature.value)}
                                     >
                                         <Text style={[
                                             styles.natureOptionText,
-                                            natureType === nature && styles.natureOptionTextSelected
+                                            natureType === nature.value && styles.natureOptionTextSelected
                                         ]}>
-                                            {nature}
+                                            {nature.label}
                                         </Text>
                                     </TouchableOpacity>
                                 ))}
@@ -348,7 +473,7 @@ const NatureDataCollection = () => {
             >
                 <View style={styles.imagePickerOverlay}>
                     <View style={styles.imagePickerContainer}>
-                        <Text style={styles.imagePickerTitle}>Choose an option</Text>
+                        <Text style={styles.imagePickerTitle}>{t.chooseOption}</Text>
                         
                         <View style={styles.imagePickerOptions}>
                             <TouchableOpacity 
@@ -357,7 +482,7 @@ const NatureDataCollection = () => {
                                 activeOpacity={0.7}
                             >
                                 <Icon name="photo-camera" size={50} color="#4A7856" />
-                                <Text style={styles.imagePickerOptionText}>Camera</Text>
+                                <Text style={styles.imagePickerOptionText}>{t.camera}</Text>
                             </TouchableOpacity>
 
                             <TouchableOpacity 
@@ -366,7 +491,7 @@ const NatureDataCollection = () => {
                                 activeOpacity={0.7}
                             >
                                 <Icon name="photo-library" size={50} color="#4A7856" />
-                                <Text style={styles.imagePickerOptionText}>Gallery</Text>
+                                <Text style={styles.imagePickerOptionText}>{t.gallery}</Text>
                             </TouchableOpacity>
                         </View>
 
@@ -374,7 +499,7 @@ const NatureDataCollection = () => {
                             style={styles.imagePickerCancelButton}
                             onPress={() => setShowImagePicker(false)}
                         >
-                            <Text style={styles.imagePickerCancelText}>Cancel</Text>
+                            <Text style={styles.imagePickerCancelText}>{t.cancel}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>

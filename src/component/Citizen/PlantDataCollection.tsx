@@ -1,15 +1,17 @@
 //import libraries
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, SafeAreaView, Platform, Image, Modal, Alert } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // component
 const PlantDataCollection = () => {
     const navigation = useNavigation();
     const route = useRoute();
+    const [currentLanguage, setCurrentLanguage] = useState('en');
 
     const [activeTab, setActiveTab] = useState('Terrestrial');
     const [plantType, setPlantType] = useState('');
@@ -21,22 +23,160 @@ const PlantDataCollection = () => {
     const [showTimePicker, setShowTimePicker] = useState(false);
     const [description, setDescription] = useState('');
 
+    // Translation object
+    const translations = {
+        en: {
+            title: 'Plant',
+            terrestrial: 'Terrestrial',
+            aquatic: 'Aquatic',
+            terrestrialPlants: 'Terrestrial Plants',
+            aquaticPlants: 'Aquatic Plants',
+            plantType: 'Plant Type',
+            photo: 'Photo',
+            date: 'Date',
+            timeOfDay: 'Time of Day',
+            description: 'Description (optional)',
+            submit: 'Submit',
+            photoPlaceholder: 'Tap to upload or capture a photo',
+            chooseOption: 'Choose an option',
+            camera: 'Camera',
+            gallery: 'Gallery',
+            cancel: 'Cancel',
+            selectTimeOfDay: 'Select Time of Day',
+            requiredField: 'Required Field',
+            selectPlantType: 'Please select a plant type',
+            uploadPhoto: 'Please upload a photo',
+            descriptionPlaceholder: 'Add any additional notes about your observation...',
+            // Plant types
+            plant: 'Plant',
+            epiphyte: 'Epiphyte',
+            lichen: 'Lichen',
+            bryophyte: 'Bryophyte',
+            fungi: 'Fungi',
+            other: 'Other',
+            floating: 'Floating',
+            submerged: 'Submerged',
+            // Time options
+            morning: 'Morning',
+            noon: 'Noon',
+            evening: 'Evening',
+            night: 'Night'
+        },
+        si: {
+            title: 'ශාක',
+            terrestrial: 'භූමිජ',
+            aquatic: 'ජලජ',
+            terrestrialPlants: 'භූමිජ ශාක',
+            aquaticPlants: 'ජලජ ශාක',
+            plantType: 'ශාක වර්ගය',
+            photo: 'ඡායාරූපය',
+            date: 'දිනය',
+            timeOfDay: 'දවසේ වේලාව',
+            description: 'විස්තරය (අත්‍යවශ්‍ය නොවේ)',
+            submit: 'ඉදිරිපත් කරන්න',
+            photoPlaceholder: 'ඡායාරූපයක් උඩුගත කිරීමට හෝ ග්‍රහණය කිරීමට තට්ටු කරන්න',
+            chooseOption: 'විකල්පයක් තෝරන්න',
+            camera: 'කැමරාව',
+            gallery: 'ගැලරිය',
+            cancel: 'අවලංගු කරන්න',
+            selectTimeOfDay: 'දවසේ වේලාව තෝරන්න',
+            requiredField: 'අවශ්‍ය ක්ෂේත්‍රය',
+            selectPlantType: 'කරුණාකර ශාක වර්ගයක් තෝරන්න',
+            uploadPhoto: 'කරුණාකර ඡායාරූපයක් උඩුගත කරන්න',
+            descriptionPlaceholder: 'ඔබේ නිරීක්ෂණය ගැන අමතර සටහන් එක් කරන්න...',
+            // Plant types
+            plant: 'ශාකය',
+            epiphyte: 'එපිෆයිට්',
+            lichen: 'ලයිකන්',
+            bryophyte: 'බ්‍රයෝෆයිට්',
+            fungi: 'දිලීර',
+            other: 'වෙනත්',
+            floating: 'පාවෙන',
+            submerged: 'ජලයේ යටවූ',
+            // Time options
+            morning: 'උදෑසන',
+            noon: 'මධ්‍යාහ්නය',
+            evening: 'සවස',
+            night: 'රාත්‍රිය'
+        },
+        ta: {
+            title: 'தாவரம்',
+            terrestrial: 'நிலவியல்',
+            aquatic: 'நீர்வாழ்',
+            terrestrialPlants: 'நிலவியல் தாவரங்கள்',
+            aquaticPlants: 'நீர்வாழ் தாவரங்கள்',
+            plantType: 'தாவர வகை',
+            photo: 'புகைப்படம்',
+            date: 'தேதி',
+            timeOfDay: 'நாளின் நேரம்',
+            description: 'விளக்கம் (விருப்பமானது)',
+            submit: 'சமர்ப்பிக்கவும்',
+            photoPlaceholder: 'புகைப்படத்தைப் பதிவேற்ற அல்லது எடுக்க தட்டவும்',
+            chooseOption: 'ஒரு விருப்பத்தைத் தேர்ந்தெடுக்கவும்',
+            camera: 'கேமரா',
+            gallery: 'கேலரி',
+            cancel: 'ரத்துசெய்',
+            selectTimeOfDay: 'நாளின் நேரத்தைத் தேர்ந்தெடுக்கவும்',
+            requiredField: 'தேவையான புலம்',
+            selectPlantType: 'தயவுசெய்து ஒரு தாவர வகையைத் தேர்ந்தெடுக்கவும்',
+            uploadPhoto: 'தயவுசெய்து ஒரு புகைப்படத்தைப் பதிவேற்றவும்',
+            descriptionPlaceholder: 'உங்கள் கவனிப்பு பற்றிய கூடுதல் குறிப்புகளைச் சேர்க்கவும்...',
+            // Plant types
+            plant: 'தாவரம்',
+            epiphyte: 'எபிஃபைட்',
+            lichen: 'லைக்கன்',
+            bryophyte: 'பிரையோஃபைட்',
+            fungi: 'பூஞ்சை',
+            other: 'மற்றவை',
+            floating: 'மிதக்கும்',
+            submerged: 'நீரில் மூழ்கியது',
+            // Time options
+            morning: 'காலை',
+            noon: 'மதியம்',
+            evening: 'மாலை',
+            night: 'இரவு'
+        }
+    };
+
+    // Load saved language preference
+    useEffect(() => {
+        loadLanguage();
+    }, []);
+
+    const loadLanguage = async () => {
+        try {
+            const savedLanguage = await AsyncStorage.getItem('userLanguage');
+            if (savedLanguage) {
+                setCurrentLanguage(savedLanguage);
+            }
+        } catch (error) {
+            console.error('Error loading language:', error);
+        }
+    };
+
+    // Get current translations
+    const t = translations[currentLanguage] || translations.en;
+
     const terrestrialPlantTypes = [
-        { id: 'plant', label: 'Plant', image: require('../../assets/image/Plant.jpeg') },
-        { id: 'epiphyte', label: 'Epiphyte', image: require('../../assets/image/Epiphyte.jpeg') },
-        { id: 'lichen', label: 'Lichen', image: require('../../assets/image/Lichen.jpg') },
-        { id: 'bryophyte', label: 'Bryophyte', image: require('../../assets/image/Bryophyte.jpg') },
-        { id: 'fungi', label: 'fungi', image: require('../../assets/image/Fungi.png') },
-        { id: 'other', label: 'other' },
+        { id: 'plant', label: t.plant, image: require('../../assets/image/Plant.jpeg') },
+        { id: 'epiphyte', label: t.epiphyte, image: require('../../assets/image/Epiphyte.jpeg') },
+        { id: 'lichen', label: t.lichen, image: require('../../assets/image/Lichen.jpg') },
+        { id: 'bryophyte', label: t.bryophyte, image: require('../../assets/image/Bryophyte.jpg') },
+        { id: 'fungi', label: t.fungi, image: require('../../assets/image/Fungi.png') },
+        { id: 'other', label: t.other },
     ];
 
     const aquaticPlantTypes = [
-        { id: 'floating', label: 'Floating', image: require('../../assets/image/Lotus.jpg') },
-        { id: 'submerged', label: 'Submerged', image: require('../../assets/image/Aquatic.jpeg') },
-        
+        { id: 'floating', label: t.floating, image: require('../../assets/image/Lotus.jpg') },
+        { id: 'submerged', label: t.submerged, image: require('../../assets/image/Aquatic.jpeg') },
     ];
 
-    const timeOptions = ['Morning', 'Noon', 'Evening', 'Night'];
+    const timeOptions = [
+        { value: 'Morning', label: t.morning },
+        { value: 'Noon', label: t.noon },
+        { value: 'Evening', label: t.evening },
+        { value: 'Night', label: t.night }
+    ];
 
     const handleBackPress = () => {
         navigation.goBack();
@@ -93,12 +233,12 @@ const PlantDataCollection = () => {
     const handleSubmit = () => {
         // Validation
         if (!plantType) {
-            Alert.alert('Required Field', 'Please select a plant type');
+            Alert.alert(t.requiredField, t.selectPlantType);
             return;
         }
 
         if (!photo) {
-            Alert.alert('Required Field', 'Please upload a photo');
+            Alert.alert(t.requiredField, t.uploadPhoto);
             return;
         }
 
@@ -123,6 +263,13 @@ const PlantDataCollection = () => {
     };
 
     const currentPlantTypes = activeTab === 'Terrestrial' ? terrestrialPlantTypes : aquaticPlantTypes;
+    const sectionTitle = activeTab === 'Terrestrial' ? t.terrestrialPlants : t.aquaticPlants;
+
+    // Get display label for current time of day
+    const getCurrentTimeLabel = () => {
+        const timeOption = timeOptions.find(opt => opt.value === timeOfDay);
+        return timeOption ? timeOption.label : timeOfDay;
+    };
 
     return (
         <SafeAreaView style={styles.safeArea}>
@@ -140,7 +287,7 @@ const PlantDataCollection = () => {
 
                 {/* Title */}
                 <View style={styles.titleContainer}>
-                    <Text style={styles.title}>Plant</Text>
+                    <Text style={styles.title}>{t.title}</Text>
                 </View>
 
                 {/* Tab Navigation */}
@@ -150,7 +297,7 @@ const PlantDataCollection = () => {
                         onPress={() => setActiveTab('Terrestrial')}
                     >
                         <Text style={[styles.tabText, activeTab === 'Terrestrial' && styles.tabTextActive]}>
-                            Terrestrial
+                            {t.terrestrial}
                         </Text>
                     </TouchableOpacity>
                     <TouchableOpacity 
@@ -158,7 +305,7 @@ const PlantDataCollection = () => {
                         onPress={() => setActiveTab('Aquatic')}
                     >
                         <Text style={[styles.tabText, activeTab === 'Aquatic' && styles.tabTextActive]}>
-                            Aquatic
+                            {t.aquatic}
                         </Text>
                     </TouchableOpacity>
                 </View>
@@ -167,8 +314,8 @@ const PlantDataCollection = () => {
                 <View style={styles.formContainer}>
                     {/* Plant Type Section */}
                     <View style={styles.inputGroup}>
-                        <Text style={styles.sectionTitle}>{activeTab} Plants</Text>
-                        <Text style={styles.label}>Plant Type</Text>
+                        <Text style={styles.sectionTitle}>{sectionTitle}</Text>
+                        <Text style={styles.label}>{t.plantType}</Text>
                         
                         <View style={styles.plantTypeGrid}>
                             {currentPlantTypes.map((type) => (
@@ -204,7 +351,7 @@ const PlantDataCollection = () => {
 
                     {/* Photo Upload */}
                     <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Photo</Text>
+                        <Text style={styles.label}>{t.photo}</Text>
                         <TouchableOpacity 
                             style={styles.photoUploadArea}
                             onPress={handlePhotoUpload}
@@ -225,7 +372,7 @@ const PlantDataCollection = () => {
                                 <View style={styles.photoPlaceholder}>
                                     <Icon name="photo-camera" size={50} color="#CCC" />
                                     <Text style={styles.photoPlaceholderText}>
-                                        Tap to upload or capture a photo
+                                        {t.photoPlaceholder}
                                     </Text>
                                 </View>
                             )}
@@ -234,7 +381,7 @@ const PlantDataCollection = () => {
 
                     {/* Date Picker */}
                     <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Date</Text>
+                        <Text style={styles.label}>{t.date}</Text>
                         <TouchableOpacity 
                             style={styles.dateInput}
                             onPress={() => setShowDatePicker(true)}
@@ -254,22 +401,22 @@ const PlantDataCollection = () => {
 
                     {/* Time of Day Dropdown */}
                     <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Time of Day</Text>
+                        <Text style={styles.label}>{t.timeOfDay}</Text>
                         <TouchableOpacity 
                             style={styles.dropdown}
                             onPress={() => setShowTimePicker(true)}
                         >
-                            <Text style={styles.dropdownText}>{timeOfDay}</Text>
+                            <Text style={styles.dropdownText}>{getCurrentTimeLabel()}</Text>
                             <Icon name="arrow-drop-down" size={24} color="#666" />
                         </TouchableOpacity>
                     </View>
 
                     {/* Description */}
                     <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Description (optional)</Text>
+                        <Text style={styles.label}>{t.description}</Text>
                         <TextInput
                             style={styles.textArea}
-                            placeholder="Add any additional notes about your observation..."
+                            placeholder={t.descriptionPlaceholder}
                             placeholderTextColor="#AAA"
                             multiline
                             numberOfLines={4}
@@ -285,7 +432,7 @@ const PlantDataCollection = () => {
                         onPress={handleSubmit}
                         activeOpacity={0.8}
                     >
-                        <Text style={styles.submitButtonText}>Submit</Text>
+                        <Text style={styles.submitButtonText}>{t.submit}</Text>
                     </TouchableOpacity>
                 </View>
             </ScrollView>
@@ -299,7 +446,7 @@ const PlantDataCollection = () => {
             >
                 <View style={styles.imagePickerOverlay}>
                     <View style={styles.imagePickerContainer}>
-                        <Text style={styles.imagePickerTitle}>Choose an option</Text>
+                        <Text style={styles.imagePickerTitle}>{t.chooseOption}</Text>
                         
                         <View style={styles.imagePickerOptions}>
                             <TouchableOpacity 
@@ -308,7 +455,7 @@ const PlantDataCollection = () => {
                                 activeOpacity={0.7}
                             >
                                 <Icon name="photo-camera" size={50} color="#4A7856" />
-                                <Text style={styles.imagePickerOptionText}>Camera</Text>
+                                <Text style={styles.imagePickerOptionText}>{t.camera}</Text>
                             </TouchableOpacity>
 
                             <TouchableOpacity 
@@ -317,7 +464,7 @@ const PlantDataCollection = () => {
                                 activeOpacity={0.7}
                             >
                                 <Icon name="photo-library" size={50} color="#4A7856" />
-                                <Text style={styles.imagePickerOptionText}>Gallery</Text>
+                                <Text style={styles.imagePickerOptionText}>{t.gallery}</Text>
                             </TouchableOpacity>
                         </View>
 
@@ -325,7 +472,7 @@ const PlantDataCollection = () => {
                             style={styles.imagePickerCancelButton}
                             onPress={() => setShowImagePicker(false)}
                         >
-                            <Text style={styles.imagePickerCancelText}>Cancel</Text>
+                            <Text style={styles.imagePickerCancelText}>{t.cancel}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -341,7 +488,7 @@ const PlantDataCollection = () => {
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContainer}>
                         <View style={styles.modalHeader}>
-                            <Text style={styles.modalTitle}>Select Time of Day</Text>
+                            <Text style={styles.modalTitle}>{t.selectTimeOfDay}</Text>
                             <TouchableOpacity 
                                 onPress={() => setShowTimePicker(false)}
                                 style={styles.modalCloseButton}
@@ -353,23 +500,23 @@ const PlantDataCollection = () => {
                         <ScrollView style={styles.modalContent}>
                             {timeOptions.map((time) => (
                                 <TouchableOpacity
-                                    key={time}
+                                    key={time.value}
                                     style={[
                                         styles.timeOption,
-                                        timeOfDay === time && styles.timeOptionSelected
+                                        timeOfDay === time.value && styles.timeOptionSelected
                                     ]}
                                     onPress={() => {
-                                        setTimeOfDay(time);
+                                        setTimeOfDay(time.value);
                                         setShowTimePicker(false);
                                     }}
                                 >
                                     <Text style={[
                                         styles.timeOptionText,
-                                        timeOfDay === time && styles.timeOptionTextSelected
+                                        timeOfDay === time.value && styles.timeOptionTextSelected
                                     ]}>
-                                        {time}
+                                        {time.label}
                                     </Text>
-                                    {timeOfDay === time && (
+                                    {timeOfDay === time.value && (
                                         <Icon name="check" size={24} color="#4A7856" />
                                     )}
                                 </TouchableOpacity>
@@ -772,4 +919,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default PlantDataCollection;   
+export default PlantDataCollection;

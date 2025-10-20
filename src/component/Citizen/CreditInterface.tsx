@@ -1,14 +1,81 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, SafeAreaView, Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // component
 const PhotoInformation = () => {
     const navigation = useNavigation();
+    const [currentLanguage, setCurrentLanguage] = useState('en');
 
     const [contactInfo, setContactInfo] = useState('');
     const [canUsePhoto, setCanUsePhoto] = useState('Yes');
     const [photoCredit, setPhotoCredit] = useState('');
+
+    // Translation object
+    const translations = {
+        en: {
+            headerTitle: 'Photo Information',
+            sectionTitle: 'Photo Credits Information',
+            infoText: 'If you wish to know more about your uploaded photo, please leave your contact details.',
+            contactLabel: 'Mobile number or email (optional)',
+            contactPlaceholder: 'Your contact information',
+            helperText: 'This information will be shared with the admin.',
+            permissionQuestion: 'Please indicate whether we can use this photo:',
+            yes: 'Yes',
+            no: 'No',
+            photoCreditLabel: 'Photo credit:',
+            photoCreditPlaceholder: 'How should we credit this photo?',
+            submit: 'Submit'
+        },
+        si: {
+            headerTitle: 'ඡායාරූප තොරතුරු',
+            sectionTitle: 'ඡායාරූප ණය තොරතුරු',
+            infoText: 'ඔබ උඩුගත කළ ඡායාරූපය ගැන වැඩිදුර දැනගැනීමට අවශ්‍ය නම්, කරුණාකර ඔබගේ සම්බන්ධතා විස්තර තබන්න.',
+            contactLabel: 'ජංගම දුරකථන අංකය හෝ විද්‍යුත් තැපෑල (අත්‍යවශ්‍ය නොවේ)',
+            contactPlaceholder: 'ඔබේ සම්බන්ධතා තොරතුරු',
+            helperText: 'මෙම තොරතුරු පරිපාලකයා සමඟ බෙදා ගනු ඇත.',
+            permissionQuestion: 'කරුණාකර අපට මෙම ඡායාරූපය භාවිතා කළ හැකිද යන්න සඳහන් කරන්න:',
+            yes: 'ඔව්',
+            no: 'නැත',
+            photoCreditLabel: 'ඡායාරූප ණය:',
+            photoCreditPlaceholder: 'මෙම ඡායාරූපය සඳහා අප කෙසේ ණය දිය යුතුද?',
+            submit: 'ඉදිරිපත් කරන්න'
+        },
+        ta: {
+            headerTitle: 'புகைப்பட தகவல்',
+            sectionTitle: 'புகைப்பட வரவுகள் தகவல்',
+            infoText: 'நீங்கள் பதிவேற்றிய புகைப்படத்தைப் பற்றி மேலும் அறிய விரும்பினால், உங்கள் தொடர்பு விவரங்களை விட்டுவிடுங்கள்.',
+            contactLabel: 'மொபைல் எண் அல்லது மின்னஞ்சல் (விருப்பமானது)',
+            contactPlaceholder: 'உங்கள் தொடர்பு தகவல்',
+            helperText: 'இந்தத் தகவல் நிர்வாகியுடன் பகிரப்படும்.',
+            permissionQuestion: 'இந்த புகைப்படத்தை நாங்கள் பயன்படுத்தலாமா என்பதைக் குறிப்பிடுங்கள்:',
+            yes: 'ஆம்',
+            no: 'இல்லை',
+            photoCreditLabel: 'புகைப்பட வரவு:',
+            photoCreditPlaceholder: 'இந்த புகைப்படத்தை எவ்வாறு வரவு வைக்க வேண்டும்?',
+            submit: 'சமர்ப்பிக்கவும்'
+        }
+    };
+
+    // Load saved language preference
+    useEffect(() => {
+        loadLanguage();
+    }, []);
+
+    const loadLanguage = async () => {
+        try {
+            const savedLanguage = await AsyncStorage.getItem('userLanguage');
+            if (savedLanguage) {
+                setCurrentLanguage(savedLanguage);
+            }
+        } catch (error) {
+            console.error('Error loading language:', error);
+        }
+    };
+
+    // Get current translations
+    const t = translations[currentLanguage] || translations.en;
 
     const handleSubmit = () => {
         const photoInformation = {
@@ -25,38 +92,38 @@ const PhotoInformation = () => {
             <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
                 {/* Header */}
                 <View style={styles.header}>
-                    <Text style={styles.headerTitle}>Photo Information</Text>
+                    <Text style={styles.headerTitle}>{t.headerTitle}</Text>
                 </View>
 
                 {/* Form Container */}
                 <View style={styles.formContainer}>
                     {/* Photo Credits Information Section */}
                     <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>Photo Credits Information</Text>
+                        <Text style={styles.sectionTitle}>{t.sectionTitle}</Text>
                         
                         <Text style={styles.infoText}>
-                            If you wish to know more about your uploaded photo, please leave your contact details.
+                            {t.infoText}
                         </Text>
 
                         {/* Contact Information Input */}
                         <View style={styles.inputGroup}>
-                            <Text style={styles.label}>Mobile number or email (optional)</Text>
+                            <Text style={styles.label}>{t.contactLabel}</Text>
                             <TextInput
                                 style={styles.textInput}
-                                placeholder="Your contact information"
+                                placeholder={t.contactPlaceholder}
                                 placeholderTextColor="#CCC"
                                 value={contactInfo}
                                 onChangeText={setContactInfo}
                             />
                             <Text style={styles.helperText}>
-                                This information will be shared with the admin.
+                                {t.helperText}
                             </Text>
                         </View>
 
                         {/* Permission Section */}
                         <View style={styles.inputGroup}>
                             <Text style={styles.questionText}>
-                                Please indicate whether we can use this photo:
+                                {t.permissionQuestion}
                             </Text>
                             
                             <View style={styles.radioGroup}>
@@ -68,7 +135,7 @@ const PhotoInformation = () => {
                                     <View style={styles.radioButton}>
                                         {canUsePhoto === 'Yes' && <View style={styles.radioButtonSelected} />}
                                     </View>
-                                    <Text style={styles.radioLabel}>Yes</Text>
+                                    <Text style={styles.radioLabel}>{t.yes}</Text>
                                 </TouchableOpacity>
 
                                 <TouchableOpacity 
@@ -79,17 +146,17 @@ const PhotoInformation = () => {
                                     <View style={styles.radioButton}>
                                         {canUsePhoto === 'No' && <View style={styles.radioButtonSelected} />}
                                     </View>
-                                    <Text style={styles.radioLabel}>No</Text>
+                                    <Text style={styles.radioLabel}>{t.no}</Text>
                                 </TouchableOpacity>
                             </View>
                         </View>
 
                         {/* Photo Credit Input */}
                         <View style={styles.inputGroup}>
-                            <Text style={styles.label}>Photo credit:</Text>
+                            <Text style={styles.label}>{t.photoCreditLabel}</Text>
                             <TextInput
                                 style={styles.textInput}
-                                placeholder="How should we credit this photo?"
+                                placeholder={t.photoCreditPlaceholder}
                                 placeholderTextColor="#CCC"
                                 value={photoCredit}
                                 onChangeText={setPhotoCredit}
@@ -102,7 +169,7 @@ const PhotoInformation = () => {
                             onPress={handleSubmit}
                             activeOpacity={0.8}
                         >
-                            <Text style={styles.submitButtonText}>Submit</Text>
+                            <Text style={styles.submitButtonText}>{t.submit}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
