@@ -1,4 +1,4 @@
-//import librariess
+//import libraries
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, SafeAreaView, Platform, Image, Modal, Alert } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -22,17 +22,18 @@ const PlantDataCollection = () => {
     const [description, setDescription] = useState('');
 
     const terrestrialPlantTypes = [
-        { id: 'plant', label: 'Plant', image: require('../../assets/image/Plant.jpg') },
-        { id: 'epiphyte', label: 'Epiphyte', image: require('../../assets/image/Nature.jpg') },
-        { id: 'lichen', label: 'Lichen', image: require('../../assets/image/Plant.jpg') },
-        { id: 'bryophyte', label: 'Bryophyte', image: require('../../assets/image/Nature.jpg') },
+        { id: 'plant', label: 'Plant', image: require('../../assets/image/Plant.jpeg') },
+        { id: 'epiphyte', label: 'Epiphyte', image: require('../../assets/image/Epiphyte.jpeg') },
+        { id: 'lichen', label: 'Lichen', image: require('../../assets/image/Lichen.jpg') },
+        { id: 'bryophyte', label: 'Bryophyte', image: require('../../assets/image/Bryophyte.jpg') },
+        { id: 'fungi', label: 'fungi', image: require('../../assets/image/Fungi.png') },
+        { id: 'other', label: 'other' },
     ];
 
     const aquaticPlantTypes = [
-        { id: 'floating', label: 'Floating', image: require('../../assets/image/Plant.jpg') },
-        { id: 'submerged', label: 'Submerged', image: require('../../assets/image/Nature.jpg') },
-        { id: 'emergent', label: 'Emergent', image: require('../../assets/image/Plant.jpg') },
-        { id: 'algae', label: 'Algae', image: require('../../assets/image/Nature.jpg') },
+        { id: 'floating', label: 'Floating', image: require('../../assets/image/Lotus.jpg') },
+        { id: 'submerged', label: 'Submerged', image: require('../../assets/image/Aquatic.jpeg') },
+        
     ];
 
     const timeOptions = ['Morning', 'Noon', 'Evening', 'Night'];
@@ -90,6 +91,17 @@ const PlantDataCollection = () => {
     };
 
     const handleSubmit = () => {
+        // Validation
+        if (!plantType) {
+            Alert.alert('Required Field', 'Please select a plant type');
+            return;
+        }
+
+        if (!photo) {
+            Alert.alert('Required Field', 'Please upload a photo');
+            return;
+        }
+
         const observationData = {
             category: 'Plant',
             plantCategory: activeTab,
@@ -99,8 +111,11 @@ const PlantDataCollection = () => {
             timeOfDay,
             description
         };
+        
         console.log('Submit observation:', observationData);
-        navigation.goBack();
+        
+        // Navigate to CreditInterface screen with the observation data
+        navigation.navigate('CreditInterface', { observationData });
     };
 
     const formatDate = (date) => {
@@ -163,10 +178,20 @@ const PlantDataCollection = () => {
                                     onPress={() => setPlantType(type.id)}
                                     activeOpacity={0.8}
                                 >
-                                    <Image source={type.image} style={styles.plantTypeImage} />
-                                    <View style={styles.plantTypeOverlay}>
-                                        <Text style={styles.plantTypeText}>{type.label}</Text>
-                                    </View>
+                                    {type.image ? (
+                                        <>
+                                            <Image source={type.image} style={styles.plantTypeImage} />
+                                            {activeTab === 'Terrestrial' && (
+                                                <View style={styles.plantTypeOverlay}>
+                                                    <Text style={styles.plantTypeText}>{type.label}</Text>
+                                                </View>
+                                            )}
+                                        </>
+                                    ) : (
+                                        <View style={[styles.plantTypeOverlay, styles.plantTypeOverlayFull]}>
+                                            <Text style={styles.plantTypeText}>{type.label}</Text>
+                                        </View>
+                                    )}
                                     {plantType === type.id && (
                                         <View style={styles.selectedBadge}>
                                             <Icon name="check-circle" size={28} color="#4A7856" />
@@ -471,6 +496,11 @@ const styles = StyleSheet.create({
         paddingVertical: 8,
         alignItems: 'center',
     },
+    plantTypeOverlayFull: {
+        height: '100%',
+        justifyContent: 'center',
+        bottom: 'auto',
+    },
     plantTypeText: {
         color: '#FFFFFF',
         fontSize: 16,
@@ -742,4 +772,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default PlantDataCollection;
+export default PlantDataCollection;   

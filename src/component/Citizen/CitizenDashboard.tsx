@@ -49,7 +49,7 @@ const CitizenDashboard = () => {
                         activeOpacity={0.9}
                     >
                         <ImageBackground
-                            source={require('../../assets/image/Plant.jpg')}
+                            source={require('../../assets/image/PlantNew.jpg')}
                             style={styles.cardImage}
                             imageStyle={styles.cardImageStyle}
                         >
@@ -66,7 +66,7 @@ const CitizenDashboard = () => {
                         activeOpacity={0.9}
                     >
                         <ImageBackground
-                            source={require('../../assets/image/Nature.jpg')}
+                            source={require('../../assets/image/NatureNew.jpg')}
                             style={styles.cardImage}
                             imageStyle={styles.cardImageStyle}
                         >
@@ -83,7 +83,7 @@ const CitizenDashboard = () => {
                         activeOpacity={0.9}
                     >
                         <ImageBackground
-                            source={require('../../assets/image/Animal.jpg')}
+                            source={require('../../assets/image/AnimalNew.jpg')}
                             style={styles.cardImage}
                             imageStyle={styles.cardImageStyle}
                         >
@@ -100,7 +100,7 @@ const CitizenDashboard = () => {
                         activeOpacity={0.9}
                     >
                         <ImageBackground
-                            source={require('../../assets/image/HumanActivity.jpeg')}
+                            source={require('../../assets/image/HumanActivityNew.jpg')}
                             style={styles.cardImage}
                             imageStyle={styles.cardImageStyle}
                         >

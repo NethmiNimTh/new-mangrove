@@ -31,6 +31,8 @@ import AnimalDataCollection from './src/component/Citizen/AnimalDataCollections'
 import PlantDataCollection from './src/component/Citizen/PlantDataCollection';
 import NatureDataCollection from './src/component/Citizen/NatureDataCollection';
 import HumanActivityDataCollection from './src/component/Citizen/HumanActivityDataCollection';    
+import CreditInterface from './src/component/Citizen/CreditInterface';
+
 
 // Google Client Configuration
 const GOOGLE_WEB_CLIENT_ID: string = '532310046514-217fr842olbptie78ubtgi4mkq84ljo8.apps.googleusercontent.com';
@@ -138,6 +140,7 @@ const App = () => {
           <Stack.Screen name="PlantDataCollection" component={PlantDataCollection} />
           <Stack.Screen name="NatureDataCollection" component={NatureDataCollection} />
           <Stack.Screen name="HumanActivityDataCollection" component={HumanActivityDataCollection} />
+          <Stack.Screen name="CreditInterface" component={CreditInterface} />
         </Stack.Navigator>
       </NavigationContainer>
     </PaperProvider>

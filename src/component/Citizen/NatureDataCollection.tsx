@@ -86,6 +86,23 @@ const NatureDataCollection = () => {
     };
 
     const handleSubmit = () => {
+        // Validation
+        if (!natureType) {
+            Alert.alert('Required Field', 'Please select a category');
+            return;
+        }
+
+        if (!photo) {
+            Alert.alert('Required Field', 'Please upload a photo');
+            return;
+        }
+
+        if (!timeOfDay) {
+            Alert.alert('Required Field', 'Please select time of day');
+            return;
+        }
+
+        // Prepare observation data
         const observationData = {
             category,
             natureType,
@@ -94,8 +111,11 @@ const NatureDataCollection = () => {
             timeOfDay,
             description
         };
+        
         console.log('Submit observation:', observationData);
-        navigation.goBack();
+        
+        // Navigate to CreditInterface screen with the observation data
+        navigation.navigate('CreditInterface', { observationData });
     };
 
     const formatDate = (date) => {
