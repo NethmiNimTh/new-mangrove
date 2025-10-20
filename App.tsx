@@ -11,7 +11,7 @@ import SQLite from 'react-native-sqlite-storage';
 import StartPage from './src/component/start-pages/start-page';
 import LoginPage from './src/component/login-page/login-page';
 import RegisterPage from './src/component/register-page/register-page';
-import MainDashboardPage from './src/component/dashboard-page/dash-board';
+
 import CitizenDashboard from './src/component/Citizen/CitizenDashboard';
 
 // Import language selection screens
@@ -128,7 +128,7 @@ const App = () => {
           <Stack.Screen name="RegisterPage" component={RegisterPage} />
           <Stack.Screen name="VerifyEmail" component={VerifyEmail} />
           <Stack.Screen name="SetPin" component={SetPin} />
-          <Stack.Screen name="MainDashboardPage" component={MainDashboardPage} />
+         
           <Stack.Screen name="CitizenDashboard" component={CitizenDashboard} />
           <Stack.Screen name="WelcomeEnglish" component={WelcomeEnglish} />
           <Stack.Screen name="WelcomeTamil" component={WelcomeTamil} />
