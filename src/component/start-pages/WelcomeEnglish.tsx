@@ -36,7 +36,7 @@ const StartPageA = () => {
             >
                 <View style={styles.contentContainer}>
                     {/* Logo at top */}
-                    <Text style={styles.logoText}>{'<Logo>'}</Text>
+                    {/* <Text style={styles.logoText}>{'<Logo>'}</Text> */}
 
                     {/* Welcome badge */}
                     <View style={styles.welcomeBadge}>
@@ -46,8 +46,9 @@ const StartPageA = () => {
                     {/* Main description text */}
                     <View style={styles.descriptionContainer}>
                         <Text style={styles.descriptionText}>
-                            THIS APP IS AN INITIATIVE TO MANAGE ECOSYSTEM RESTORATION DATA IN SRI LANKA. USE IT TO RECORD ANY OBSERVATION YOU BELIEVE IS IMPORTANT FOR OUR CONSERVATION EFFORTS.
-                        </Text>
+                            THIS APP IS AN INITIATIVE TO MANAGE ECOSYSTEM RESTORATION DATA IN SRI LANKA.</Text>
+                        <Text style={styles.descriptionText}>USE IT TO RECORD ANY OBSERVATION YOU BELIEVE IS IMPORTANT FOR OUR CONSERVATION EFFORTS.</Text>    
+                        
                     </View>
                 </View>
 

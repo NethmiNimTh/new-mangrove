@@ -83,7 +83,7 @@ const AnimalDataCollection = () => {
             timeOfDay: 'දවසේ වේලාව',
             description: 'විස්තරය (අත්‍යවශ්‍ය නොවේ)',
             submit: 'ඉදිරිපත් කරන්න',
-            photoPlaceholder: 'ඡායාරූපයක් උඩුගත කිරීමට හෝ ග්‍රහණය කිරීමට තට්ටු කරන්න',
+            photoPlaceholder: 'ඡායාරූපය ගැනීම/ ඇතුලත් කිරීම මෙහිදී සිදු කරන්න',
             chooseOption: 'විකල්පයක් තෝරන්න',
             camera: 'කැමරාව',
             gallery: 'ගැලරිය',

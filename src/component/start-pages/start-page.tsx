@@ -1,6 +1,6 @@
 //import libraries
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ImageBackground, Platform, BackHandler, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ImageBackground, Platform, BackHandler, TouchableOpacity, Image } from 'react-native';
 import { ToggleButton } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 
@@ -35,8 +35,14 @@ const StartPage = () => {
                 onPress={handlePress}
             >
                 <View style={styles.contentContainer}>
-                    <Text style={[styles.text, styles.logoText]}>{'<Logo>'}</Text>
-                    <Text style={[styles.text, styles.nameText]}>{'<NAME>'}</Text>
+                    {/* Logo Icon */}
+                    <Image 
+                        source={require('../../assets/image/logo.jpg')} 
+                        style={styles.logoIcon}
+                        resizeMode="contain"
+                    />
+                    
+                    <Text style={[styles.text, styles.nameText]}>{'BluTally'}</Text>
                 </View>
 
                 <View style={styles.buttonGroup}>
@@ -93,6 +99,22 @@ const styles = StyleSheet.create({
         color: '#FFFFFF',
         fontWeight: 'bold',
         textAlign: 'center',
+        ...Platform.select({
+            ios: {
+                shadowColor: 'black',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.5,
+                shadowRadius: 4,
+            },
+            android: {
+                elevation: 6,
+            },
+        }),
+    },
+    logoIcon: {
+        width: 800,
+        height: 100,
+        marginBottom: 20,
         ...Platform.select({
             ios: {
                 shadowColor: 'black',

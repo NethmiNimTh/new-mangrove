@@ -36,7 +36,7 @@ const WelcomeTamil = () => {
             >
                 <View style={styles.contentContainer}>
                     {/* Logo at top */}
-                    <Text style={styles.logoText}>{'<Logo>'}</Text>
+                    {/* <Text style={styles.logoText}>{'<Logo>'}</Text> */}
 
                     {/* Welcome badge in Tamil */}
                     <View style={styles.welcomeBadge}>
@@ -46,14 +46,15 @@ const WelcomeTamil = () => {
                     {/* Main description text in Tamil */}
                     <View style={styles.descriptionContainer}>
                         <Text style={styles.descriptionText}>
-                            இச் செயலியானது இலங்கையில் இயற்கை மறுசீரமைப்பு தாளவு மேம்படுத்தக் மற்றும் மேலாண்மை செய்ய உதவும்.
+                            இச் செயலியானது இலங்கையினுடைய இயற்கை மறுசீரமைப்பினை நிர்வகிக்க முயற்சிக்கிறது. 
+                            மேலும் எமது வளத்தினை திறன்பட கையாள உதவுகிறது
                         </Text>
                     </View>
 
                     {/* Bottom additional text */}
                     <View style={styles.bottomTextContainer}>
                         <Text style={styles.bottomText}>
-                            உங்களுடைய பெருமதிப்பான ஆதரவை வாழ்வேகின்றோம் .
+                            உங்களுடைய பங்களிப்புக்கு நன்றி. 
                         </Text>
                     </View>
                 </View>

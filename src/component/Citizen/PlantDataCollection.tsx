@@ -1,17 +1,32 @@
 //import libraries
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, SafeAreaView, Platform, Image, Modal, Alert } from 'react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { 
+    View, 
+    Text, 
+    StyleSheet, 
+    TouchableOpacity, 
+    TextInput, 
+    ScrollView, 
+    SafeAreaView, 
+    Platform, 
+    Image, 
+    Modal, 
+    Alert,
+    ActivityIndicator 
+} from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import RNFS from 'react-native-fs';
+import { plantApi } from '../../api/plantapi';
 
 // component
 const PlantDataCollection = () => {
     const navigation = useNavigation();
-    const route = useRoute();
     const [currentLanguage, setCurrentLanguage] = useState('en');
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const [activeTab, setActiveTab] = useState('Terrestrial');
     const [plantType, setPlantType] = useState('');
@@ -37,6 +52,7 @@ const PlantDataCollection = () => {
             timeOfDay: 'Time of Day',
             description: 'Description (optional)',
             submit: 'Submit',
+            submitting: 'Submitting...',
             photoPlaceholder: 'Tap to upload or capture a photo',
             chooseOption: 'Choose an option',
             camera: 'Camera',
@@ -47,6 +63,10 @@ const PlantDataCollection = () => {
             selectPlantType: 'Please select a plant type',
             uploadPhoto: 'Please upload a photo',
             descriptionPlaceholder: 'Add any additional notes about your observation...',
+            success: 'Success',
+            submissionSuccess: 'Plant observation submitted successfully!',
+            submissionFailed: 'Submission Failed',
+            tryAgain: 'Failed to submit observation. Please try again.',
             // Plant types
             plant: 'Plant',
             epiphyte: 'Epiphyte',
@@ -74,6 +94,7 @@ const PlantDataCollection = () => {
             timeOfDay: 'දවසේ වේලාව',
             description: 'විස්තරය (අත්‍යවශ්‍ය නොවේ)',
             submit: 'ඉදිරිපත් කරන්න',
+            submitting: 'ඉදිරිපත් කරමින්...',
             photoPlaceholder: 'ඡායාරූපයක් උඩුගත කිරීමට හෝ ග්‍රහණය කිරීමට තට්ටු කරන්න',
             chooseOption: 'විකල්පයක් තෝරන්න',
             camera: 'කැමරාව',
@@ -84,6 +105,10 @@ const PlantDataCollection = () => {
             selectPlantType: 'කරුණාකර ශාක වර්ගයක් තෝරන්න',
             uploadPhoto: 'කරුණාකර ඡායාරූපයක් උඩුගත කරන්න',
             descriptionPlaceholder: 'ඔබේ නිරීක්ෂණය ගැන අමතර සටහන් එක් කරන්න...',
+            success: 'සාර්ථකයි',
+            submissionSuccess: 'ශාක නිරීක්ෂණය සාර්ථකව ඉදිරිපත් කරන ලදී!',
+            submissionFailed: 'ඉදිරිපත් කිරීම අසාර්ථක විය',
+            tryAgain: 'නිරීක්ෂණය ඉදිරිපත් කිරීමට අසමත් විය. කරුණාකර නැවත උත්සාහ කරන්න.',
             // Plant types
             plant: 'ශාකය',
             epiphyte: 'එපිෆයිට්',
@@ -111,6 +136,7 @@ const PlantDataCollection = () => {
             timeOfDay: 'நாளின் நேரம்',
             description: 'விளக்கம் (விருப்பமானது)',
             submit: 'சமர்ப்பிக்கவும்',
+            submitting: 'சமர்ப்பிக்கப்படுகிறது...',
             photoPlaceholder: 'புகைப்படத்தைப் பதிவேற்ற அல்லது எடுக்க தட்டவும்',
             chooseOption: 'ஒரு விருப்பத்தைத் தேர்ந்தெடுக்கவும்',
             camera: 'கேமரா',
@@ -121,6 +147,10 @@ const PlantDataCollection = () => {
             selectPlantType: 'தயவுசெய்து ஒரு தாவர வகையைத் தேர்ந்தெடுக்கவும்',
             uploadPhoto: 'தயவுசெய்து ஒரு புகைப்படத்தைப் பதிவேற்றவும்',
             descriptionPlaceholder: 'உங்கள் கவனிப்பு பற்றிய கூடுதல் குறிப்புகளைச் சேர்க்கவும்...',
+            success: 'வெற்றி',
+            submissionSuccess: 'தாவர கவனிப்பு வெற்றிகரமாக சமர்ப்பிக்கப்பட்டது!',
+            submissionFailed: 'சமர்ப்பித்தல் தோல்வியடைந்தது',
+            tryAgain: 'கவனிப்பை சமர்ப்பிக்க தோல்வி. மீண்டும் முயற்சிக்கவும்.',
             // Plant types
             plant: 'தாவரம்',
             epiphyte: 'எபிஃபைட்',
@@ -178,6 +208,18 @@ const PlantDataCollection = () => {
         { value: 'Night', label: t.night }
     ];
 
+    // Convert image to base64
+    const convertImageToBase64 = async (uri) => {
+        try {
+            const cleanUri = Platform.OS === 'android' ? uri.replace('file://', '') : uri;
+            const base64 = await RNFS.readFile(cleanUri, 'base64');
+            return `data:image/jpeg;base64,${base64}`;
+        } catch (error) {
+            console.error('Error converting image to base64:', error);
+            throw error;
+        }
+    };
+
     const handleBackPress = () => {
         navigation.goBack();
     };
@@ -190,7 +232,9 @@ const PlantDataCollection = () => {
         setShowImagePicker(false);
         const options = {
             mediaType: 'photo',
-            quality: 1,
+            quality: 0.8,
+            maxWidth: 1024,
+            maxHeight: 1024,
             saveToPhotos: true,
         };
 
@@ -209,7 +253,9 @@ const PlantDataCollection = () => {
         setShowImagePicker(false);
         const options = {
             mediaType: 'photo',
-            quality: 1,
+            quality: 0.8,
+            maxWidth: 1024,
+            maxHeight: 1024,
         };
 
         launchImageLibrary(options, (response) => {
@@ -230,7 +276,7 @@ const PlantDataCollection = () => {
         }
     };
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         // Validation
         if (!plantType) {
             Alert.alert(t.requiredField, t.selectPlantType);
@@ -242,20 +288,61 @@ const PlantDataCollection = () => {
             return;
         }
 
-        const observationData = {
-            category: 'Plant',
-            plantCategory: activeTab,
-            plantType,
-            photo,
-            date: date.toISOString().split('T')[0],
-            timeOfDay,
-            description
-        };
-        
-        console.log('Submit observation:', observationData);
-        
-        // Navigate to CreditInterface screen with the observation data
-        navigation.navigate('CreditInterface', { observationData });
+        setIsSubmitting(true);
+
+        try {
+            // Convert image to base64
+            console.log('Converting image to base64...');
+            const base64Image = await convertImageToBase64(photo);
+
+            // Prepare data for API
+            const plantData = {
+                plantCategory: activeTab,
+                plantType,
+                photo: base64Image,
+                date: date.toISOString().split('T')[0],
+                timeOfDay,
+                description: description.trim() || undefined,
+            };
+
+            console.log('Submitting plant observation to backend...');
+
+            // Send to backend
+            const response = await plantApi.createPlant(plantData);
+
+            if (response.success) {
+                Alert.alert(
+                    t.success,
+                    t.submissionSuccess,
+                    [
+                        {
+                            text: 'OK',
+                            onPress: () => {
+                                // Reset form
+                                setPlantType('');
+                                setPhoto(null);
+                                setDate(new Date());
+                                setTimeOfDay('Morning');
+                                setDescription('');
+                                
+                                // Navigate to CreditInterface with the response data
+                                navigation.navigate('CreditInterface', { 
+                                    observationData: response.data 
+                                });
+                            },
+                        },
+                    ]
+                );
+            }
+        } catch (error) {
+            console.error('Error submitting plant observation:', error);
+            Alert.alert(
+                t.submissionFailed,
+                error.message || t.tryAgain
+            );
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const formatDate = (date) => {
@@ -295,6 +382,7 @@ const PlantDataCollection = () => {
                     <TouchableOpacity 
                         style={[styles.tab, activeTab === 'Terrestrial' && styles.tabActive]}
                         onPress={() => setActiveTab('Terrestrial')}
+                        disabled={isSubmitting}
                     >
                         <Text style={[styles.tabText, activeTab === 'Terrestrial' && styles.tabTextActive]}>
                             {t.terrestrial}
@@ -303,6 +391,7 @@ const PlantDataCollection = () => {
                     <TouchableOpacity 
                         style={[styles.tab, activeTab === 'Aquatic' && styles.tabActive]}
                         onPress={() => setActiveTab('Aquatic')}
+                        disabled={isSubmitting}
                     >
                         <Text style={[styles.tabText, activeTab === 'Aquatic' && styles.tabTextActive]}>
                             {t.aquatic}
@@ -324,6 +413,7 @@ const PlantDataCollection = () => {
                                     style={styles.plantTypeCard}
                                     onPress={() => setPlantType(type.id)}
                                     activeOpacity={0.8}
+                                    disabled={isSubmitting}
                                 >
                                     {type.image ? (
                                         <>
@@ -356,6 +446,7 @@ const PlantDataCollection = () => {
                             style={styles.photoUploadArea}
                             onPress={handlePhotoUpload}
                             activeOpacity={0.7}
+                            disabled={isSubmitting}
                         >
                             {photo ? (
                                 <View style={styles.photoContainer}>
@@ -364,6 +455,7 @@ const PlantDataCollection = () => {
                                         style={styles.removePhotoButton}
                                         onPress={() => setPhoto(null)}
                                         activeOpacity={0.8}
+                                        disabled={isSubmitting}
                                     >
                                         <Icon name="close" size={20} color="#FFFFFF" />
                                     </TouchableOpacity>
@@ -385,6 +477,7 @@ const PlantDataCollection = () => {
                         <TouchableOpacity 
                             style={styles.dateInput}
                             onPress={() => setShowDatePicker(true)}
+                            disabled={isSubmitting}
                         >
                             <Text style={styles.dateText}>{formatDate(date)}</Text>
                             <Icon name="calendar-today" size={20} color="#666" />
@@ -395,6 +488,7 @@ const PlantDataCollection = () => {
                                 mode="date"
                                 display="default"
                                 onChange={onDateChange}
+                                maximumDate={new Date()}
                             />
                         )}
                     </View>
@@ -405,6 +499,7 @@ const PlantDataCollection = () => {
                         <TouchableOpacity 
                             style={styles.dropdown}
                             onPress={() => setShowTimePicker(true)}
+                            disabled={isSubmitting}
                         >
                             <Text style={styles.dropdownText}>{getCurrentTimeLabel()}</Text>
                             <Icon name="arrow-drop-down" size={24} color="#666" />
@@ -423,16 +518,30 @@ const PlantDataCollection = () => {
                             value={description}
                             onChangeText={setDescription}
                             textAlignVertical="top"
+                            editable={!isSubmitting}
                         />
                     </View>
 
                     {/* Submit Button */}
                     <TouchableOpacity 
-                        style={styles.submitButton}
+                        style={[
+                            styles.submitButton,
+                            isSubmitting && styles.submitButtonDisabled
+                        ]}
                         onPress={handleSubmit}
                         activeOpacity={0.8}
+                        disabled={isSubmitting}
                     >
-                        <Text style={styles.submitButtonText}>{t.submit}</Text>
+                        {isSubmitting ? (
+                            <View style={styles.submitButtonContent}>
+                                <ActivityIndicator color="#FFFFFF" size="small" />
+                                <Text style={[styles.submitButtonText, { marginLeft: 10 }]}>
+                                    {t.submitting}
+                                </Text>
+                            </View>
+                        ) : (
+                            <Text style={styles.submitButtonText}>{t.submit}</Text>
+                        )}
                     </TouchableOpacity>
                 </View>
             </ScrollView>
@@ -783,6 +892,14 @@ const styles = StyleSheet.create({
                 elevation: 4,
             },
         }),
+    },
+    submitButtonDisabled: {
+        backgroundColor: '#A8B8AA',
+        opacity: 0.7,
+    },
+    submitButtonContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
     },
     submitButtonText: {
         fontSize: 20,

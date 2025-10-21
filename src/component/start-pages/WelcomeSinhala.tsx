@@ -36,27 +36,28 @@ const WelcomeSinhala = () => {
             >
                 <View style={styles.contentContainer}>
                     {/* Logo at top */}
-                    <Text style={styles.logoText}>{'<Logo>'}</Text>
+                    {/* <Text style={styles.logoText}>{'<Logo>'}</Text> */}
 
                     {/* Welcome badge in Sinhala */}
                     <View style={styles.welcomeBadge}>
-                        <Text style={styles.welcomeText}>ආචාරයෙන් පිළිගනිමු</Text>
+                        <Text style={styles.welcomeText}>සාදරයෙන් පිළිගනිමු</Text>
                     </View>
 
                     {/* Main description text in Sinhala */}
                     <View style={styles.descriptionContainer}>
                         <Text style={styles.descriptionText}>
-                            මෙය ශ්‍රී ලංකාවේ පාරිසරික පද්ධති ප්‍රතිස්ථාපන දත්ත කළමනාකරණය සඳහා
+                            මෙය ශ්‍රී ලංකාවේ පාරිසරික පද්ධති ප්‍රතිෂ්ඨාපන දත්ත කළමනාකරණය සඳහා යෙදුමකි.
                         </Text>
                     </View>
 
                     {/* Bottom additional text */}
                     <View style={styles.bottomTextContainer}>
                         <Text style={styles.bottomText}>
-                            ඔබටත් හැවිතයට ආරක්ෂා
+                            ඔබටත් භාවිතයට ආරාධනා
+
                         </Text>
                         <Text style={styles.bottomText}>
-                            එක්න අප හා එකතුවන්න.
+                            එන්න අප හා එක්වන්න!
                         </Text>
                     </View>
                 </View>
