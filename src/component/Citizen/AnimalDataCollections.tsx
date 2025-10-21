@@ -1,12 +1,42 @@
 //import libraries
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, SafeAreaView, Platform, Image, Modal, Alert } from 'react-native';
+import { 
+    View, 
+    Text, 
+    StyleSheet, 
+    TouchableOpacity, 
+    TextInput, 
+    ScrollView, 
+    SafeAreaView, 
+    Platform, 
+    Image, 
+    Modal, 
+    Alert,
+    ActivityIndicator
+} from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import { RadioButton } from 'react-native-paper';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import RNFS from 'react-native-fs';
+import { animalApi } from '../../api/animalApi';
+
+// Custom Radio Button Component
+const CustomRadioButton = ({ selected, onPress, disabled }) => (
+    <TouchableOpacity 
+        style={styles.customRadio}
+        onPress={onPress}
+        disabled={disabled}
+    >
+        <View style={[
+            styles.customRadioOuter,
+            selected && styles.customRadioOuterSelected
+        ]}>
+            {selected && <View style={styles.customRadioInner} />}
+        </View>
+    </TouchableOpacity>
+);
 
 // component
 const AnimalDataCollection = () => {
@@ -14,6 +44,7 @@ const AnimalDataCollection = () => {
     const route = useRoute();
     const category = route.params?.category || 'Animal';
     const [currentLanguage, setCurrentLanguage] = useState('en');
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const [animalType, setAnimalType] = useState('');
     const [showAnimalPicker, setShowAnimalPicker] = useState(false);
@@ -35,6 +66,7 @@ const AnimalDataCollection = () => {
             timeOfDay: 'Time of Day',
             description: 'Description (Optional)',
             submit: 'Submit',
+            submitting: 'Submitting...',
             photoPlaceholder: 'Tap to upload or capture a photo',
             chooseOption: 'Choose an option',
             camera: 'Camera',
@@ -45,6 +77,10 @@ const AnimalDataCollection = () => {
             uploadPhoto: 'Please upload a photo',
             selectTimeOfDay: 'Please select time of day',
             descriptionPlaceholder: 'Add any additional notes about your observation...',
+            success: 'Success',
+            submissionSuccess: 'Animal observation submitted successfully!',
+            submissionFailed: 'Submission Failed',
+            tryAgain: 'Failed to submit observation. Please try again.',
             // Animal categories
             mammals: 'Mammals',
             birds: 'Birds',
@@ -83,6 +119,7 @@ const AnimalDataCollection = () => {
             timeOfDay: 'දවසේ වේලාව',
             description: 'විස්තරය (අත්‍යවශ්‍ය නොවේ)',
             submit: 'ඉදිරිපත් කරන්න',
+            submitting: 'ඉදිරිපත් කරමින්...',
             photoPlaceholder: 'ඡායාරූපය ගැනීම/ ඇතුලත් කිරීම මෙහිදී සිදු කරන්න',
             chooseOption: 'විකල්පයක් තෝරන්න',
             camera: 'කැමරාව',
@@ -93,30 +130,30 @@ const AnimalDataCollection = () => {
             uploadPhoto: 'කරුණාකර ඡායාරූපයක් උඩුගත කරන්න',
             selectTimeOfDay: 'කරුණාකර දවසේ වේලාව තෝරන්න',
             descriptionPlaceholder: 'ඔබේ නිරීක්ෂණය ගැන අමතර සටහන් එක් කරන්න...',
-            // Animal categories
+            success: 'සාර්ථකයි',
+            submissionSuccess: 'සත්ව නිරීක්ෂණය සාර්ථකව ඉදිරිපත් කරන ලදී!',
+            submissionFailed: 'ඉදිරිපත් කිරීම අසාර්ථක විය',
+            tryAgain: 'නිරීක්ෂණය ඉදිරිපත් කිරීමට අසමත් විය. කරුණාකර නැවත උත්සාහ කරන්න.',
+            // Animal categories (keep all translations)
             mammals: 'ක්ෂීරපායීන්',
             birds: 'පක්ෂීන්',
             reptilesAmphibians: 'උරගයින් සහ උභයජීවීන්',
-            // Mammals
             deer: 'මුව',
             fox: 'හිවලා',
             rabbit: 'හාවා',
             squirrel: 'ලේනා',
             bat: 'වවුලා',
             otherMammal: 'වෙනත් ක්ෂීරපායීන්',
-            // Birds
             songbird: 'ගීත පක්ෂියා',
             birdOfPrey: 'විලෝපික පක්ෂියා',
             waterfowl: 'ජල කුරුල්ලන්',
             wadingBird: 'වතුර පක්ෂියා',
             otherBird: 'වෙනත් පක්ෂියා',
-            // Reptiles & Amphibians
             snake: 'සර්පයා',
             lizard: 'කටුස්සා',
             turtle: 'ඉබ්බා',
             frog: 'ගෙම්බා',
             otherReptileAmphibian: 'වෙනත් උරගයා/උභයජීවීන්',
-            // Time options
             morning: 'උදෑසන',
             noon: 'මධ්‍යාහ්නය',
             evening: 'සවස',
@@ -131,6 +168,7 @@ const AnimalDataCollection = () => {
             timeOfDay: 'நாளின் நேரம்',
             description: 'விளக்கம் (விருப்பமானது)',
             submit: 'சமர்ப்பிக்கவும்',
+            submitting: 'சமர்ப்பிக்கப்படுகிறது...',
             photoPlaceholder: 'புகைப்படத்தைப் பதிவேற்ற அல்லது எடுக்க தட்டவும்',
             chooseOption: 'ஒரு விருப்பத்தைத் தேர்ந்தெடுக்கவும்',
             camera: 'கேமரா',
@@ -141,30 +179,30 @@ const AnimalDataCollection = () => {
             uploadPhoto: 'தயவுசெய்து ஒரு புகைப்படத்தைப் பதிவேற்றவும்',
             selectTimeOfDay: 'தயவுசெய்து நாளின் நேரத்தைத் தேர்ந்தெடுக்கவும்',
             descriptionPlaceholder: 'உங்கள் கவனிப்பு பற்றிய கூடுதல் குறிப்புகளைச் சேர்க்கவும்...',
-            // Animal categories
+            success: 'வெற்றி',
+            submissionSuccess: 'விலங்கு கவனிப்பு வெற்றிகரமாக சமர்ப்பிக்கப்பட்டது!',
+            submissionFailed: 'சமர்ப்பித்தல் தோல்வியடைந்தது',
+            tryAgain: 'கவனிப்பை சமர்ப்பிக்க தோல்வி. மீண்டும் முயற்சிக்கவும்.',
+            // Animal categories (keep all translations)
             mammals: 'பாலூட்டிகள்',
             birds: 'பறவைகள்',
             reptilesAmphibians: 'ஊர்வன & நீர்நில விலங்குகள்',
-            // Mammals
             deer: 'மான்',
             fox: 'நரி',
             rabbit: 'முயல்',
             squirrel: 'அணில்',
             bat: 'வெளவால்',
             otherMammal: 'பிற பாலூட்டி',
-            // Birds
             songbird: 'பாடும் பறவை',
             birdOfPrey: 'வேட்டைப் பறவை',
             waterfowl: 'நீர்ப்பறவை',
             wadingBird: 'நடக்கும் பறவை',
             otherBird: 'பிற பறவை',
-            // Reptiles & Amphibians
             snake: 'பாம்பு',
             lizard: 'பல்லி',
             turtle: 'ஆமை',
             frog: 'தவளை',
             otherReptileAmphibian: 'பிற ஊர்வன/நீர்நில விலங்கு',
-            // Time options
             morning: 'காலை',
             noon: 'மதியம்',
             evening: 'மாலை',
@@ -189,39 +227,51 @@ const AnimalDataCollection = () => {
     };
 
     // Get current translations
-    const t = translations[currentLanguage] || translations.en;
+    const lang = translations[currentLanguage] || translations.en;
 
     const animalCategories = {
-        [t.mammals]: [
-            { value: 'Deer', label: t.deer },
-            { value: 'Fox', label: t.fox },
-            { value: 'Rabbit', label: t.rabbit },
-            { value: 'Squirrel', label: t.squirrel },
-            { value: 'Bat', label: t.bat },
-            { value: 'Other Mammal', label: t.otherMammal }
+        [lang.mammals]: [
+            { value: 'Deer', label: lang.deer },
+            { value: 'Fox', label: lang.fox },
+            { value: 'Rabbit', label: lang.rabbit },
+            { value: 'Squirrel', label: lang.squirrel },
+            { value: 'Bat', label: lang.bat },
+            { value: 'Other Mammal', label: lang.otherMammal }
         ],
-        [t.birds]: [
-            { value: 'Songbird', label: t.songbird },
-            { value: 'Bird of Prey', label: t.birdOfPrey },
-            { value: 'Waterfowl', label: t.waterfowl },
-            { value: 'Wading Bird', label: t.wadingBird },
-            { value: 'Other Bird', label: t.otherBird }
+        [lang.birds]: [
+            { value: 'Songbird', label: lang.songbird },
+            { value: 'Bird of Prey', label: lang.birdOfPrey },
+            { value: 'Waterfowl', label: lang.waterfowl },
+            { value: 'Wading Bird', label: lang.wadingBird },
+            { value: 'Other Bird', label: lang.otherBird }
         ],
-        [t.reptilesAmphibians]: [
-            { value: 'Snake', label: t.snake },
-            { value: 'Lizard', label: t.lizard },
-            { value: 'Turtle', label: t.turtle },
-            { value: 'Frog', label: t.frog },
-            { value: 'Other Reptile/Amphibian', label: t.otherReptileAmphibian }
+        [lang.reptilesAmphibians]: [
+            { value: 'Snake', label: lang.snake },
+            { value: 'Lizard', label: lang.lizard },
+            { value: 'Turtle', label: lang.turtle },
+            { value: 'Frog', label: lang.frog },
+            { value: 'Other Reptile/Amphibian', label: lang.otherReptileAmphibian }
         ]
     };
 
     const timeOptions = [
-        { value: 'Morning', label: t.morning },
-        { value: 'Noon', label: t.noon },
-        { value: 'Evening', label: t.evening },
-        { value: 'Night', label: t.night }
+        { value: 'Morning', label: lang.morning },
+        { value: 'Noon', label: lang.noon },
+        { value: 'Evening', label: lang.evening },
+        { value: 'Night', label: lang.night }
     ];
+
+    // Convert image to base64
+    const convertImageToBase64 = async (uri) => {
+        try {
+            const cleanUri = Platform.OS === 'android' ? uri.replace('file://', '') : uri;
+            const base64 = await RNFS.readFile(cleanUri, 'base64');
+            return `data:image/jpeg;base64,${base64}`;
+        } catch (error) {
+            console.error('Error converting image to base64:', error);
+            throw error;
+        }
+    };
 
     const handleBackPress = () => {
         navigation.goBack();
@@ -235,7 +285,9 @@ const AnimalDataCollection = () => {
         setShowImagePicker(false);
         const options = {
             mediaType: 'photo',
-            quality: 1,
+            quality: 0.8,
+            maxWidth: 1024,
+            maxHeight: 1024,
             saveToPhotos: true,
         };
 
@@ -254,7 +306,9 @@ const AnimalDataCollection = () => {
         setShowImagePicker(false);
         const options = {
             mediaType: 'photo',
-            quality: 1,
+            quality: 0.8,
+            maxWidth: 1024,
+            maxHeight: 1024,
         };
 
         launchImageLibrary(options, (response) => {
@@ -280,32 +334,74 @@ const AnimalDataCollection = () => {
         setShowAnimalPicker(false);
     };
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
+        // Validation
         if (!animalType) {
-            Alert.alert(t.requiredField, t.selectAnimalAlert);
+            Alert.alert(lang.requiredField, lang.selectAnimalAlert);
             return;
         }
 
         if (!photo) {
-            Alert.alert(t.requiredField, t.uploadPhoto);
+            Alert.alert(lang.requiredField, lang.uploadPhoto);
             return;
         }
 
         if (!timeOfDay) {
-            Alert.alert(t.requiredField, t.selectTimeOfDay);
+            Alert.alert(lang.requiredField, lang.selectTimeOfDay);
             return;
         }
 
-        const observationData = {
-            category,
-            animalType,
-            photo,
-            date: date.toISOString().split('T')[0],
-            timeOfDay,
-            description
-        };
-        console.log('Submit observation:', observationData);
-        navigation.navigate('CreditInterface', { observationData });
+        setIsSubmitting(true);
+
+        try {
+            console.log('Converting image to base64...');
+            const base64Image = await convertImageToBase64(photo);
+
+            const animalData = {
+                animalType,
+                photo: base64Image,
+                date: date.toISOString().split('T')[0],
+                timeOfDay,
+                description: description.trim() || undefined,
+            };
+
+            console.log('Submitting animal observation to backend...');
+
+            const response = await animalApi.createAnimal(animalData);
+
+            if (response.success) {
+                Alert.alert(
+                    lang.success,
+                    lang.submissionSuccess,
+                    [
+                        {
+                            text: 'OK',
+                            onPress: () => {
+                                // Reset form
+                                setAnimalType('');
+                                setPhoto(null);
+                                setDate(new Date());
+                                setTimeOfDay('');
+                                setDescription('');
+                                
+                                // Navigate to CreditInterface
+                                navigation.navigate('CreditInterface', { 
+                                    observationData: response.data 
+                                });
+                            },
+                        },
+                    ]
+                );
+            }
+        } catch (error) {
+            console.error('Error submitting animal observation:', error);
+            Alert.alert(
+                lang.submissionFailed,
+                error.message || lang.tryAgain
+            );
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const formatDate = (date) => {
@@ -318,7 +414,7 @@ const AnimalDataCollection = () => {
             const found = animals.find(a => a.value === animalType);
             if (found) return found.label;
         }
-        return t.selectAnimalType;
+        return lang.selectAnimalType;
     };
 
     return (
@@ -337,17 +433,20 @@ const AnimalDataCollection = () => {
 
                 {/* Title */}
                 <View style={styles.titleContainer}>
-                    <Text style={styles.title}>{t.title}</Text>
+                    <Text style={styles.title}>{lang.title}</Text>
                 </View>
 
                 {/* Form Content */}
                 <View style={styles.formContainer}>
                     {/* Animal Type Dropdown */}
                     <View style={styles.inputGroup}>
-                        <Text style={styles.label}>{t.animalType} <Text style={styles.required}>*</Text></Text>
+                        <Text style={styles.label}>
+                            {lang.animalType} <Text style={styles.required}>*</Text>
+                        </Text>
                         <TouchableOpacity 
                             style={styles.dropdown}
                             onPress={() => setShowAnimalPicker(true)}
+                            disabled={isSubmitting}
                         >
                             <Text style={[styles.dropdownText, !animalType && styles.placeholder]}>
                                 {getCurrentAnimalLabel()}
@@ -358,11 +457,14 @@ const AnimalDataCollection = () => {
 
                     {/* Photo Upload */}
                     <View style={styles.inputGroup}>
-                        <Text style={styles.label}>{t.photo} <Text style={styles.required}>*</Text></Text>
+                        <Text style={styles.label}>
+                            {lang.photo} <Text style={styles.required}>*</Text>
+                        </Text>
                         <TouchableOpacity 
                             style={styles.photoUploadArea}
                             onPress={handlePhotoUpload}
                             activeOpacity={0.7}
+                            disabled={isSubmitting}
                         >
                             {photo ? (
                                 <View style={styles.photoContainer}>
@@ -371,6 +473,7 @@ const AnimalDataCollection = () => {
                                         style={styles.removePhotoButton}
                                         onPress={() => setPhoto(null)}
                                         activeOpacity={0.8}
+                                        disabled={isSubmitting}
                                     >
                                         <Icon name="close" size={20} color="#FFFFFF" />
                                     </TouchableOpacity>
@@ -379,7 +482,7 @@ const AnimalDataCollection = () => {
                                 <View style={styles.photoPlaceholder}>
                                     <Icon name="photo-camera" size={50} color="#CCC" />
                                     <Text style={styles.photoPlaceholderText}>
-                                        {t.photoPlaceholder}
+                                        {lang.photoPlaceholder}
                                     </Text>
                                 </View>
                             )}
@@ -388,10 +491,13 @@ const AnimalDataCollection = () => {
 
                     {/* Date Picker */}
                     <View style={styles.inputGroup}>
-                        <Text style={styles.label}>{t.date} <Text style={styles.required}>*</Text></Text>
+                        <Text style={styles.label}>
+                            {lang.date} <Text style={styles.required}>*</Text>
+                        </Text>
                         <TouchableOpacity 
                             style={styles.dateInput}
                             onPress={() => setShowDatePicker(true)}
+                            disabled={isSubmitting}
                         >
                             <Text style={styles.dateText}>{formatDate(date)}</Text>
                             <Icon name="calendar-today" size={20} color="#666" />
@@ -402,39 +508,42 @@ const AnimalDataCollection = () => {
                                 mode="date"
                                 display="default"
                                 onChange={onDateChange}
+                                maximumDate={new Date()}
                             />
                         )}
                     </View>
 
-                    {/* Time of Day */}
+                    {/* Time of Day - Custom Radio Buttons */}
                     <View style={styles.inputGroup}>
-                        <Text style={styles.label}>{t.timeOfDay} <Text style={styles.required}>*</Text></Text>
+                        <Text style={styles.label}>
+                            {lang.timeOfDay} <Text style={styles.required}>*</Text>
+                        </Text>
                         <View style={styles.radioContainer}>
                             <View style={styles.radioRow}>
                                 <TouchableOpacity 
                                     style={styles.radioItem}
                                     onPress={() => setTimeOfDay('Morning')}
+                                    disabled={isSubmitting}
                                 >
-                                    <RadioButton
-                                        value="Morning"
-                                        status={timeOfDay === 'Morning' ? 'checked' : 'unchecked'}
+                                    <CustomRadioButton
+                                        selected={timeOfDay === 'Morning'}
                                         onPress={() => setTimeOfDay('Morning')}
-                                        color="#4A7856"
+                                        disabled={isSubmitting}
                                     />
-                                    <Text style={styles.radioLabel}>{t.morning}</Text>
+                                    <Text style={styles.radioLabel}>{lang.morning}</Text>
                                 </TouchableOpacity>
 
                                 <TouchableOpacity 
                                     style={styles.radioItem}
                                     onPress={() => setTimeOfDay('Noon')}
+                                    disabled={isSubmitting}
                                 >
-                                    <RadioButton
-                                        value="Noon"
-                                        status={timeOfDay === 'Noon' ? 'checked' : 'unchecked'}
+                                    <CustomRadioButton
+                                        selected={timeOfDay === 'Noon'}
                                         onPress={() => setTimeOfDay('Noon')}
-                                        color="#4A7856"
+                                        disabled={isSubmitting}
                                     />
-                                    <Text style={styles.radioLabel}>{t.noon}</Text>
+                                    <Text style={styles.radioLabel}>{lang.noon}</Text>
                                 </TouchableOpacity>
                             </View>
 
@@ -442,27 +551,27 @@ const AnimalDataCollection = () => {
                                 <TouchableOpacity 
                                     style={styles.radioItem}
                                     onPress={() => setTimeOfDay('Evening')}
+                                    disabled={isSubmitting}
                                 >
-                                    <RadioButton
-                                        value="Evening"
-                                        status={timeOfDay === 'Evening' ? 'checked' : 'unchecked'}
+                                    <CustomRadioButton
+                                        selected={timeOfDay === 'Evening'}
                                         onPress={() => setTimeOfDay('Evening')}
-                                        color="#4A7856"
+                                        disabled={isSubmitting}
                                     />
-                                    <Text style={styles.radioLabel}>{t.evening}</Text>
+                                    <Text style={styles.radioLabel}>{lang.evening}</Text>
                                 </TouchableOpacity>
 
                                 <TouchableOpacity 
                                     style={styles.radioItem}
                                     onPress={() => setTimeOfDay('Night')}
+                                    disabled={isSubmitting}
                                 >
-                                    <RadioButton
-                                        value="Night"
-                                        status={timeOfDay === 'Night' ? 'checked' : 'unchecked'}
+                                    <CustomRadioButton
+                                        selected={timeOfDay === 'Night'}
                                         onPress={() => setTimeOfDay('Night')}
-                                        color="#4A7856"
+                                        disabled={isSubmitting}
                                     />
-                                    <Text style={styles.radioLabel}>{t.night}</Text>
+                                    <Text style={styles.radioLabel}>{lang.night}</Text>
                                 </TouchableOpacity>
                             </View>
                         </View>
@@ -470,26 +579,40 @@ const AnimalDataCollection = () => {
 
                     {/* Description */}
                     <View style={styles.inputGroup}>
-                        <Text style={styles.label}>{t.description}</Text>
+                        <Text style={styles.label}>{lang.description}</Text>
                         <TextInput
                             style={styles.textArea}
-                            placeholder={t.descriptionPlaceholder}
+                            placeholder={lang.descriptionPlaceholder}
                             placeholderTextColor="#AAA"
                             multiline
                             numberOfLines={4}
                             value={description}
                             onChangeText={setDescription}
                             textAlignVertical="top"
+                            editable={!isSubmitting}
                         />
                     </View>
 
                     {/* Submit Button */}
                     <TouchableOpacity 
-                        style={styles.submitButton}
+                        style={[
+                            styles.submitButton,
+                            isSubmitting && styles.submitButtonDisabled
+                        ]}
                         onPress={handleSubmit}
                         activeOpacity={0.8}
+                        disabled={isSubmitting}
                     >
-                        <Text style={styles.submitButtonText}>{t.submit}</Text>
+                        {isSubmitting ? (
+                            <View style={styles.submitButtonContent}>
+                                <ActivityIndicator color="#FFFFFF" size="small" />
+                                <Text style={[styles.submitButtonText, { marginLeft: 10 }]}>
+                                    {lang.submitting}
+                                </Text>
+                            </View>
+                        ) : (
+                            <Text style={styles.submitButtonText}>{lang.submit}</Text>
+                        )}
                     </TouchableOpacity>
                 </View>
             </ScrollView>
@@ -504,7 +627,7 @@ const AnimalDataCollection = () => {
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContainer}>
                         <View style={styles.modalHeader}>
-                            <Text style={styles.modalTitle}>{t.selectAnimalType}</Text>
+                            <Text style={styles.modalTitle}>{lang.selectAnimalType}</Text>
                             <TouchableOpacity 
                                 onPress={() => setShowAnimalPicker(false)}
                                 style={styles.modalCloseButton}
@@ -552,7 +675,7 @@ const AnimalDataCollection = () => {
             >
                 <View style={styles.imagePickerOverlay}>
                     <View style={styles.imagePickerContainer}>
-                        <Text style={styles.imagePickerTitle}>{t.chooseOption}</Text>
+                        <Text style={styles.imagePickerTitle}>{lang.chooseOption}</Text>
                         
                         <View style={styles.imagePickerOptions}>
                             <TouchableOpacity 
@@ -561,7 +684,7 @@ const AnimalDataCollection = () => {
                                 activeOpacity={0.7}
                             >
                                 <Icon name="photo-camera" size={50} color="#4A7856" />
-                                <Text style={styles.imagePickerOptionText}>{t.camera}</Text>
+                                <Text style={styles.imagePickerOptionText}>{lang.camera}</Text>
                             </TouchableOpacity>
 
                             <TouchableOpacity 
@@ -570,7 +693,7 @@ const AnimalDataCollection = () => {
                                 activeOpacity={0.7}
                             >
                                 <Icon name="photo-library" size={50} color="#4A7856" />
-                                <Text style={styles.imagePickerOptionText}>{t.gallery}</Text>
+                                <Text style={styles.imagePickerOptionText}>{lang.gallery}</Text>
                             </TouchableOpacity>
                         </View>
 
@@ -578,7 +701,7 @@ const AnimalDataCollection = () => {
                             style={styles.imagePickerCancelButton}
                             onPress={() => setShowImagePicker(false)}
                         >
-                            <Text style={styles.imagePickerCancelText}>{t.cancel}</Text>
+                            <Text style={styles.imagePickerCancelText}>{lang.cancel}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -720,6 +843,29 @@ const styles = StyleSheet.create({
         color: '#333',
         fontFamily: 'JejuHallasan-Regular',
     },
+    // Custom Radio Button Styles
+    customRadio: {
+        marginRight: 8,
+    },
+    customRadioOuter: {
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        borderWidth: 2,
+        borderColor: '#CCC',
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#FFFFFF',
+    },
+    customRadioOuterSelected: {
+        borderColor: '#4A7856',
+    },
+    customRadioInner: {
+        width: 12,
+        height: 12,
+        borderRadius: 6,
+        backgroundColor: '#4A7856',
+    },
     radioContainer: {
         marginTop: 5,
     },
@@ -767,6 +913,14 @@ const styles = StyleSheet.create({
                 elevation: 4,
             },
         }),
+    },
+    submitButtonDisabled: {
+        backgroundColor: '#A8B8AA',
+        opacity: 0.7,
+    },
+    submitButtonContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
     },
     submitButtonText: {
         fontSize: 20,
@@ -930,4 +1084,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default AnimalDataCollection
+export default AnimalDataCollection;
