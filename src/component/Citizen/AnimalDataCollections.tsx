@@ -335,74 +335,53 @@ const AnimalDataCollection = () => {
     };
 
     const handleSubmit = async () => {
-        // Validation
-        if (!animalType) {
-            Alert.alert(lang.requiredField, lang.selectAnimalAlert);
-            return;
-        }
+    if (!activityType) {
+        Alert.alert(t.requiredField, t.selectActivityAlert);
+        return;
+    }
 
-        if (!photo) {
-            Alert.alert(lang.requiredField, lang.uploadPhoto);
-            return;
-        }
+    if (!photo) {
+        Alert.alert(t.requiredField, t.uploadPhoto);
+        return;
+    }
 
-        if (!timeOfDay) {
-            Alert.alert(lang.requiredField, lang.selectTimeOfDay);
-            return;
-        }
+    if (!timeOfDay) {
+        Alert.alert(t.requiredField, t.selectTimeOfDay);
+        return;
+    }
 
-        setIsSubmitting(true);
-
-        try {
-            console.log('Converting image to base64...');
-            const base64Image = await convertImageToBase64(photo);
-
-            const animalData = {
-                animalType,
-                photo: base64Image,
-                date: date.toISOString().split('T')[0],
-                timeOfDay,
-                description: description.trim() || undefined,
-            };
-
-            console.log('Submitting animal observation to backend...');
-
-            const response = await animalApi.createAnimal(animalData);
-
-            if (response.success) {
-                Alert.alert(
-                    lang.success,
-                    lang.submissionSuccess,
-                    [
-                        {
-                            text: 'OK',
-                            onPress: () => {
-                                // Reset form
-                                setAnimalType('');
-                                setPhoto(null);
-                                setDate(new Date());
-                                setTimeOfDay('');
-                                setDescription('');
-                                
-                                // Navigate to CreditInterface
-                                navigation.navigate('CreditInterface', { 
-                                    observationData: response.data 
-                                });
-                            },
-                        },
-                    ]
-                );
-            }
-        } catch (error) {
-            console.error('Error submitting animal observation:', error);
-            Alert.alert(
-                lang.submissionFailed,
-                error.message || lang.tryAgain
-            );
-        } finally {
-            setIsSubmitting(false);
-        }
+    const observationData = {
+        category,
+        activityType,
+        photo,
+        date: date.toISOString().split('T')[0],
+        timeOfDay,
+        description
     };
+
+    try {
+        const response = await fetch("http://<YOUR_LOCAL_IP>:5000/api/human-activities", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(observationData),
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            Alert.alert("Success", "Observation submitted successfully!");
+            navigation.navigate('CreditInterface', { observationData: data.data });
+        } else {
+            Alert.alert("Error", data.message || "Failed to submit observation");
+        }
+    } catch (error) {
+        console.error("Submit error:", error);
+        Alert.alert("Error", "Unable to connect to server. Check your connection.");
+    }
+};
+
 
     const formatDate = (date) => {
         return date.toISOString().split('T')[0];
